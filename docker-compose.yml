@@ -1,0 +1,49 @@
+version: "3.9"
+
+services:
+
+  users:
+    build:
+      context: ./users-service
+    container_name: users-service
+    ports:
+      - "8001:8000"
+    environment:
+      - MONGO_URL=mongodb://admin:admin123@mongo:27017/?authSource=admin
+      - SECRET_KEY=changeme-use-a-long-random-secret-in-production
+
+  product:
+    build:
+      context: ./product-service
+    container_name: product-service
+    ports:
+      - "8002:8000"
+
+  optimization:
+    build:
+      context: ./optimization-service
+    container_name: optimization-service
+    ports:
+      - "8003:8000"
+    environment:
+      - USERS_SERVICE_URL=http://users:8000
+      - SECRET_KEY=changeme-use-a-long-random-secret-in-production
+      - MONGO_URL=mongodb://admin:admin123@mongo:27017/?authSource=admin
+
+  mongo:
+    image: mongo:7
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    environment:
+    - MONGO_INITDB_ROOT_USERNAME=admin
+    - MONGO_INITDB_ROOT_PASSWORD=admin123
+    volumes:
+      - mongo_data:/data/db
+
+networks:
+  default:
+    name: packaging-network
+
+volumes:
+  mongo_data:
