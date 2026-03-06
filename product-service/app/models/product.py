@@ -8,12 +8,15 @@ from .campaign import CampaignResponse
 
 class Size(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid4()))
-    size_number: str  # e.g. "38", "M", "XL"
-    size_name: str    # e.g. "Small", "Medium", "Euro 38"
+    name: str   # e.g. "S", "M", "XL", "9W", "64GB", "120cm"
+    order: int  # sequential position starting at 0
 
 
 class ProductCreate(BaseModel):
     name: str
+    description: str
+    ean_code: str
+    manufacturer_id: str
     family_id: str
     subfamily_id: str
     campaign_id: str
@@ -23,6 +26,9 @@ class ProductCreate(BaseModel):
 class ProductResponse(BaseModel):
     id: str
     name: str
+    description: str
+    ean_code: str
+    manufacturer_id: str
     family_id: str
     subfamily_id: str
     campaign_id: str
@@ -33,7 +39,13 @@ class ProductDetailResponse(BaseModel):
     """Full product with resolved references — used in GET /products/{id}."""
     id: str
     name: str
+    description: str
+    ean_code: str
+    manufacturer_id: str
+    family_id: str
+    subfamily_id: str
+    campaign_id: str
+    sizes: list[Size]
     family: FamilyResponse
     subfamily: SubfamilyResponse
     campaign: CampaignResponse
-    sizes: list[Size]

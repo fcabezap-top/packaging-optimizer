@@ -1,7 +1,18 @@
-from fastapi import FastAPI
-from .routers import products, families, subfamilies, campaigns
+from contextlib import asynccontextmanager
 
-app = FastAPI(title="Product Service")
+from fastapi import FastAPI
+
+from .routers import products, families, subfamilies, campaigns
+from .seed import run_seed
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    run_seed()
+    yield
+
+
+app = FastAPI(title="Product Service", lifespan=lifespan)
 
 app.include_router(families.router)
 app.include_router(subfamilies.router)
