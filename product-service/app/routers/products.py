@@ -1,11 +1,9 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from uuid import uuid4
 
 from ..database import products_collection, families_collection, subfamilies_collection, campaigns_collection
 from ..models.product import ProductCreate, ProductResponse, ProductDetailResponse
-from ..models.family import FamilyResponse
-from ..models.subfamily import SubfamilyResponse
-from ..models.campaign import CampaignResponse
+from ..security import TokenData, require_auth, require_admin, require_reviewer_or_admin, require_content_creator
 
 router = APIRouter(prefix="/products", tags=["Products"])
 
@@ -29,20 +27,35 @@ def _resolve(product: dict) -> dict:
 
 
 @router.get("/", response_model=list[ProductResponse])
-def get_all_products():
+def get_all_products(_: TokenData = Depends(require_reviewer_or_admin)):
+    """All products – reviewer and admin only."""
     return [_serialize(p) for p in products_collection.find()]
 
 
+@router.get("/mine", response_model=list[ProductResponse])
+def get_my_products(current_user: TokenData = Depends(require_auth)):
+    """Returns all products where manufacturer_id matches the token owner's id."""
+    if not current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Token does not contain user id",
+        )
+    return [_serialize(p) for p in products_collection.find({"manufacturer_id": current_user.id})]
+
+
 @router.get("/{product_id}", response_model=ProductDetailResponse)
-def get_product(product_id: str):
+def get_product(product_id: str, current_user: TokenData = Depends(require_auth)):
     product = products_collection.find_one({"id": product_id})
     if not product:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+    # Manufacturers can only see their own products
+    if current_user.role == "manufacturer" and product.get("manufacturer_id") != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     return _resolve(product)
 
 
 @router.post("/", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
-def add_product(product: ProductCreate):
+def add_product(product: ProductCreate, _: TokenData = Depends(require_content_creator)):
     if not families_collection.find_one({"id": product.family_id}):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Family not found")
     subfamily = subfamilies_collection.find_one({"id": product.subfamily_id})
@@ -60,7 +73,7 @@ def add_product(product: ProductCreate):
 
 
 @router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_product(product_id: str):
+def delete_product(product_id: str, _: TokenData = Depends(require_admin)):
     result = products_collection.delete_one({"id": product_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
