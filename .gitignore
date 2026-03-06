@@ -1,0 +1,22 @@
+# Contexto de referencia — no subir al repo
+repos-contexto/
+COPILOT_CONTEXT.md
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+dist/
+build/
+
+# Entornos
+.env
+.env.*
+
+# Docker
+*.log
+
+# IDEs
+.vscode/
+.idea/
