@@ -18,6 +18,8 @@ services:
     container_name: product-service
     ports:
       - "8002:8000"
+    environment:
+      - MONGO_URL=mongodb://admin:admin123@mongo:27017/?authSource=admin
 
   optimization:
     build:
