@@ -19,7 +19,7 @@ SEED_USERS = [
         "first_name": "Ana",
         "last_name": "García",
         "role": "manufacturer",
-        "password": hash_password("Manufacturer1!"),
+        "hashed_password": hash_password("Manufacturer1!"),
     },
     {
         "id": "d4e5f6a7-b8c9-4d0e-a1f2-000000000002",
@@ -28,7 +28,7 @@ SEED_USERS = [
         "first_name": "Miguel",
         "last_name": "Torres",
         "role": "manufacturer",
-        "password": hash_password("Manufacturer2!"),
+        "hashed_password": hash_password("Manufacturer2!"),
     },
     {
         "id": "d4e5f6a7-b8c9-4d0e-a1f2-000000000003",
@@ -37,7 +37,16 @@ SEED_USERS = [
         "first_name": "Carlos",
         "last_name": "López",
         "role": "reviewer",
-        "password": hash_password("Reviewer1!"),
+        "hashed_password": hash_password("Reviewer1!"),
+    },
+    {
+        "id": "d4e5f6a7-b8c9-4d0e-a1f2-000000000004",
+        "username": "admin01",
+        "email": "admin01@packopt.com",
+        "first_name": "Laura",
+        "last_name": "Martínez",
+        "role": "admin",
+        "hashed_password": hash_password("Admin1!"),
     },
 ]
 

@@ -1,8 +1,9 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from uuid import uuid4
 
 from ..database import families_collection
 from ..models.family import FamilyCreate, FamilyResponse
+from ..security import TokenData, require_auth, require_admin
 
 router = APIRouter(prefix="/families", tags=["Families"])
 
@@ -13,12 +14,12 @@ def _serialize(doc: dict) -> dict:
 
 
 @router.get("/", response_model=list[FamilyResponse])
-def get_all_families():
+def get_all_families(_: TokenData = Depends(require_auth)):
     return [_serialize(f) for f in families_collection.find()]
 
 
 @router.post("/", response_model=FamilyResponse, status_code=status.HTTP_201_CREATED)
-def create_family(family: FamilyCreate):
+def create_family(family: FamilyCreate, _: TokenData = Depends(require_admin)):
     doc = family.model_dump()
     doc["id"] = str(uuid4())
     families_collection.insert_one(doc)
@@ -26,7 +27,7 @@ def create_family(family: FamilyCreate):
 
 
 @router.delete("/{family_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_family(family_id: str):
+def delete_family(family_id: str, _: TokenData = Depends(require_admin)):
     result = families_collection.delete_one({"id": family_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Family not found")
