@@ -41,6 +41,21 @@ services:
       mongo:
         condition: service_healthy
 
+  frontend:
+    build:
+      context: ./frontend
+    container_name: frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_USERS_API=http://localhost:8001
+      - VITE_PRODUCT_API=http://localhost:8002
+      - VITE_OPTIMIZATION_API=http://localhost:8003
+    depends_on:
+      - users
+      - product
+      - optimization
+
   mongo:
     image: mongo:7
     container_name: mongo
