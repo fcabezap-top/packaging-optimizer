@@ -1,23 +1,23 @@
 /* ------------------------------------------------------------------ */
-/* Design tokens — inspirados en el design system del SPA de referencia */
-/* Paleta: blanco puro, negro, grises neutros, bordes finos             */
+/* Design tokens — sistema puro negro/blanco inspirado en Inditex/Zara */
+/* Sin azules, sin grises intermedios. Solo negro, blanco, bordes finos */
 /* ------------------------------------------------------------------ */
 
 :root {
   /* Colores base */
   --color-bg:           #ffffff;
-  --color-bg-subtle:    #f7f7f7;
-  --color-border:       #e0e0e0;
-  --color-border-strong:#aaaaaa;
-  --color-content-1:    #111111;
-  --color-content-2:    #444444;
+  --color-bg-subtle:    #f5f5f5;
+  --color-border:       #e8e8e8;
+  --color-border-strong:#c0c0c0;
+  --color-content-1:    #000000;
+  --color-content-2:    #3a3a3a;
   --color-content-3:    #888888;
   --color-content-inv:  #ffffff;
-  --color-bg-inv:       #111111;
+  --color-bg-inv:       #000000;
 
-  /* Acento — azul oscuro neutro para acciones primarias */
-  --color-accent:       #1a1a2e;
-  --color-accent-hover: #16213e;
+  /* Acento — negro puro, nunca azul */
+  --color-accent:       #000000;
+  --color-accent-hover: #222222;
 
   /* Error / éxito */
   --color-error:        #c0392b;
@@ -33,8 +33,8 @@
   --size-7: 28px;
   --size-8: 32px;
 
-  /* Tipografía */
-  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* Tipografía — Inter light, similar al sistema Inditex */
+  --font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
   --font-size-xs:   11px;
   --font-size-s:    13px;
   --font-size-m:    15px;
@@ -42,14 +42,14 @@
   --font-size-xl:   24px;
   --font-size-2xl:  32px;
 
-  /* Radios */
-  --radius-s:  2px;
-  --radius-m:  4px;
-  --radius-l:  8px;
+  /* Radios — mínimos, estilo Inditex */
+  --radius-s:  0px;
+  --radius-m:  2px;
+  --radius-l:  2px;
 
   /* Sombras */
-  --shadow-s: 0 1px 4px rgba(0,0,0,0.08);
-  --shadow-m: 0 4px 16px rgba(0,0,0,0.12);
+  --shadow-s: 0 1px 4px rgba(0,0,0,0.06);
+  --shadow-m: 0 4px 16px rgba(0,0,0,0.10);
 }
 
 /* ------------------------------------------------------------------ */
@@ -91,3 +91,96 @@ input, textarea, select {
   font-family: inherit;
   font-size: inherit;
 }
+
+/* ------------------------------------------------------------------ */
+/* Componentes base reutilizables — estilo Inditex: negro/blanco       */
+/* ------------------------------------------------------------------ */
+
+/* Botón primario — negro relleno, hover inversión */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--size-2);
+  padding: var(--size-3) var(--size-6);
+  font-family: var(--font-family);
+  font-size: var(--font-size-s);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid var(--color-content-1);
+  border-radius: var(--radius-s);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  background: var(--color-content-1);
+  color: var(--color-content-inv);
+}
+.btn:hover:not(:disabled) {
+  background: var(--color-bg);
+  color: var(--color-content-1);
+}
+.btn:disabled {
+  background: var(--color-bg);
+  color: var(--color-border-strong);
+  border-color: var(--color-border);
+  cursor: not-allowed;
+}
+
+/* Botón outline — borde negro, fondo blanco, hover inversión */
+.btn--ghost {
+  background: var(--color-bg);
+  color: var(--color-content-1);
+}
+.btn--ghost:hover:not(:disabled) {
+  background: var(--color-content-1);
+  color: var(--color-content-inv);
+}
+
+/* Botón small */
+.btn--sm {
+  padding: var(--size-2) var(--size-4);
+  font-size: var(--font-size-xs);
+}
+
+/* Botón danger */
+.btn--danger {
+  border-color: var(--color-error);
+  background: var(--color-error);
+  color: #fff;
+}
+.btn--danger:hover:not(:disabled) {
+  background: var(--color-bg);
+  color: var(--color-error);
+}
+
+/* Card estilo Inditex — borde fino, hover inversión total */
+.card {
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  padding: var(--size-6);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.card--hoverable {
+  cursor: pointer;
+}
+.card--hoverable:hover {
+  background: var(--color-bg-inv);
+  border-color: var(--color-bg-inv);
+  color: var(--color-content-inv);
+}
+
+/* Badge / tag */
+.badge {
+  display: inline-block;
+  padding: 2px var(--size-2);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-s);
+}
+.badge--active   { color: var(--color-success); }
+.badge--inactive { color: var(--color-content-3); }
+.badge--pending  { color: var(--color-content-2); }
+

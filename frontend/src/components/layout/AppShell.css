@@ -1,0 +1,245 @@
+.shell {
+  display: grid;
+  grid-template-rows: 56px auto 1fr;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--color-bg);
+}
+
+/* ── Header ─────────────────────────────────────────────────────────── */
+.shell__header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  padding: 0 var(--size-8);
+  background: var(--color-bg-inv);
+  border-bottom: 1px solid #222;
+}
+
+.shell__logo {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-content-inv);
+  min-width: 160px;
+}
+
+.shell__section {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-content-inv);
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.shell__user {
+  display: flex;
+  align-items: center;
+  gap: var(--size-4);
+}
+
+.shell__username {
+  font-size: var(--font-size-xs);
+  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 0.04em;
+}
+
+.shell__logout {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-content-inv);
+  background: none;
+  border: 1px solid rgba(255,255,255,0.3);
+  padding: var(--size-1) var(--size-3);
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease;
+  font-family: var(--font-family);
+}
+.shell__logout:hover {
+  border-color: var(--color-content-inv);
+  background: rgba(255,255,255,0.08);
+}
+
+/* ── Tabs bar ────────────────────────────────────────────────────────── */
+.shell__tabs {
+  display: flex;
+  justify-content: center;
+  gap: var(--size-8);
+  padding: 0 var(--size-8) var(--size-4);
+  margin-top: var(--size-6);
+  background: var(--color-bg);
+}
+
+.shell__tab {
+  padding: var(--size-3) 0 var(--size-2) 0;
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-content-3);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+  font-family: var(--font-family);
+}
+
+.shell__tab:hover {
+  color: var(--color-content-1);
+}
+
+.shell__tab--active {
+  color: var(--color-content-1);
+  font-weight: 600;
+  border-bottom-color: var(--color-content-1);
+}
+
+/* ── Content ─────────────────────────────────────────────────────────── */
+.shell__content {
+  padding: var(--size-8);
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;  display: flex;
+  flex-direction: column;}
+
+/* ── Page header (título de sección) ─────────────────────────────────── */
+.pageHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: var(--size-5);
+  margin-bottom: var(--size-8);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.pageHeader__title {
+  font-size: var(--font-size-xl);
+  font-weight: 300;
+  letter-spacing: -0.01em;
+  color: var(--color-content-1);
+}
+
+.pageHeader__subtitle {
+  font-size: var(--font-size-s);
+  color: var(--color-content-3);
+  letter-spacing: 0.02em;
+}
+
+
+/* ── Header ─────────────────────────────────────────────────────────── */
+.shell__header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  padding: 0 var(--size-8);
+  background: var(--color-bg-inv);
+  border-bottom: 1px solid #222;
+}
+
+.shell__logo {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-content-inv);
+}
+
+.shell__nav {
+  display: flex;
+  align-items: center;
+  gap: var(--size-6);
+}
+
+.shell__navLink {
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.12s ease;
+  font-family: var(--font-family);
+}
+.shell__navLink:hover,
+.shell__navLink--active {
+  color: var(--color-content-inv);
+}
+
+.shell__user {
+  display: flex;
+  align-items: center;
+  gap: var(--size-4);
+}
+
+.shell__username {
+  font-size: var(--font-size-xs);
+  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 0.04em;
+}
+
+.shell__logout {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-content-inv);
+  background: none;
+  border: 1px solid rgba(255,255,255,0.3);
+  padding: var(--size-1) var(--size-3);
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease;
+  font-family: var(--font-family);
+}
+.shell__logout:hover {
+  border-color: var(--color-content-inv);
+  background: rgba(255,255,255,0.08);
+}
+
+/* ── Content ─────────────────────────────────────────────────────────── */
+.shell__content {
+  padding: var(--size-8);
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* ── Page header (título de sección) ─────────────────────────────────── */
+.pageHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: var(--size-5);
+  margin-bottom: var(--size-8);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.pageHeader__title {
+  font-size: var(--font-size-xl);
+  font-weight: 300;
+  letter-spacing: -0.01em;
+  color: var(--color-content-1);
+}
+
+.pageHeader__subtitle {
+  font-size: var(--font-size-s);
+  color: var(--color-content-3);
+  letter-spacing: 0.02em;
+}
