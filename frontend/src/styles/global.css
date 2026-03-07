@@ -1,0 +1,93 @@
+/* ------------------------------------------------------------------ */
+/* Design tokens — inspirados en el design system del SPA de referencia */
+/* Paleta: blanco puro, negro, grises neutros, bordes finos             */
+/* ------------------------------------------------------------------ */
+
+:root {
+  /* Colores base */
+  --color-bg:           #ffffff;
+  --color-bg-subtle:    #f7f7f7;
+  --color-border:       #e0e0e0;
+  --color-border-strong:#aaaaaa;
+  --color-content-1:    #111111;
+  --color-content-2:    #444444;
+  --color-content-3:    #888888;
+  --color-content-inv:  #ffffff;
+  --color-bg-inv:       #111111;
+
+  /* Acento — azul oscuro neutro para acciones primarias */
+  --color-accent:       #1a1a2e;
+  --color-accent-hover: #16213e;
+
+  /* Error / éxito */
+  --color-error:        #c0392b;
+  --color-success:      #27ae60;
+
+  /* Espaciado — escala × 8px */
+  --size-1: 4px;
+  --size-2: 8px;
+  --size-3: 12px;
+  --size-4: 16px;
+  --size-5: 20px;
+  --size-6: 24px;
+  --size-7: 28px;
+  --size-8: 32px;
+
+  /* Tipografía */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-size-xs:   11px;
+  --font-size-s:    13px;
+  --font-size-m:    15px;
+  --font-size-l:    18px;
+  --font-size-xl:   24px;
+  --font-size-2xl:  32px;
+
+  /* Radios */
+  --radius-s:  2px;
+  --radius-m:  4px;
+  --radius-l:  8px;
+
+  /* Sombras */
+  --shadow-s: 0 1px 4px rgba(0,0,0,0.08);
+  --shadow-m: 0 4px 16px rgba(0,0,0,0.12);
+}
+
+/* ------------------------------------------------------------------ */
+/* Reset / base global                                                  */
+/* ------------------------------------------------------------------ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size-m);
+  color: var(--color-content-1);
+  background: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+input, textarea, select {
+  font-family: inherit;
+  font-size: inherit;
+}
