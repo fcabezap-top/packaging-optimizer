@@ -1,16 +1,22 @@
 import React from 'react';
 import { useAuthStore } from '../../store/auth';
+import AppShell from '../../components/layout/AppShell';
 
 const DashboardPage: React.FC = () => {
-  const { username, role, clearAuth } = useAuthStore();
+  const { username, fullName, role } = useAuthStore();
 
   return (
-    <div style={{ padding: 32 }}>
-      <h1>Dashboard</h1>
-      <p>Bienvenido, <strong>{username}</strong> ({role})</p>
-      <button onClick={clearAuth} style={{ marginTop: 16 }}>Cerrar sesión</button>
-    </div>
+    <AppShell>
+      <div className="pageHeader">
+        <h1 className="pageHeader__title">Dashboard</h1>
+        <span className="pageHeader__subtitle">Bienvenido, {fullName ?? username}</span>
+      </div>
+      <p style={{ fontSize: 'var(--font-size-s)', color: 'var(--color-content-3)' }}>
+        Rol activo: <strong style={{ color: 'var(--color-content-1)' }}>{role}</strong>
+      </p>
+    </AppShell>
   );
 };
 
 export default DashboardPage;
+
