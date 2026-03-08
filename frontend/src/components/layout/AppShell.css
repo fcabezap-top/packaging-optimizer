@@ -105,14 +105,6 @@
   border-bottom-color: var(--color-content-1);
 }
 
-/* ── Content ─────────────────────────────────────────────────────────── */
-.shell__content {
-  padding: var(--size-8);
-  max-width: 1280px;
-  width: 100%;
-  margin: 0 auto;  display: flex;
-  flex-direction: column;}
-
 /* ── Page header (título de sección) ─────────────────────────────────── */
 .pageHeader {
   display: flex;
@@ -219,6 +211,17 @@
   max-width: 1280px;
   width: 100%;
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.shell__content--full {
+  padding: 0;
+  max-width: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ── Page header (título de sección) ─────────────────────────────────── */

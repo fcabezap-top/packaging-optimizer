@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from uuid import uuid4
 
 from ..database import products_collection, families_collection, subfamilies_collection, campaigns_collection
-from ..models.product import ProductCreate, ProductResponse, ProductDetailResponse
+from ..models.product import ProductCreate, ProductResponse, ProductDetailResponse, ProductStatusUpdate
 from ..security import TokenData, require_auth, require_admin, require_reviewer_or_admin, require_content_creator
 
 router = APIRouter(prefix="/products", tags=["Products"])
@@ -26,21 +26,21 @@ def _resolve(product: dict) -> dict:
     }
 
 
-@router.get("/", response_model=list[ProductResponse])
+@router.get("/", response_model=list[ProductDetailResponse])
 def get_all_products(_: TokenData = Depends(require_reviewer_or_admin)):
-    """All products – reviewer and admin only."""
-    return [_serialize(p) for p in products_collection.find()]
+    """All products resolved – reviewer and admin only."""
+    return [_resolve(p) for p in products_collection.find()]
 
 
-@router.get("/mine", response_model=list[ProductResponse])
+@router.get("/mine", response_model=list[ProductDetailResponse])
 def get_my_products(current_user: TokenData = Depends(require_auth)):
-    """Returns all products where manufacturer_id matches the token owner's id."""
+    """Returns all products (resolved) where manufacturer_id matches the token owner."""
     if not current_user.id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Token does not contain user id",
         )
-    return [_serialize(p) for p in products_collection.find({"manufacturer_id": current_user.id})]
+    return [_resolve(p) for p in products_collection.find({"manufacturer_id": current_user.id})]
 
 
 @router.get("/{product_id}", response_model=ProductDetailResponse)
@@ -77,4 +77,34 @@ def delete_product(product_id: str, _: TokenData = Depends(require_admin)):
     result = products_collection.delete_one({"id": product_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+
+
+VALID_TRANSITIONS: dict[str, list[str]] = {
+    "reviewer": ["proposed"],
+    "admin":    ["proposed", "pending"],
+    "manufacturer": ["accepted", "rejected"],
+}
+
+
+@router.patch("/{product_id}/status", response_model=ProductDetailResponse)
+def update_product_status(
+    product_id: str,
+    body: ProductStatusUpdate,
+    current_user: TokenData = Depends(require_auth),
+):
+    """Update product status. Manufacturers: accepted/rejected. Reviewer/admin: proposed."""
+    allowed = VALID_TRANSITIONS.get(current_user.role or "", [])
+    if body.status not in allowed:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Role '{current_user.role}' cannot set status '{body.status}'",
+        )
+    doc = products_collection.find_one({"id": product_id})
+    if not doc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+    if current_user.role == "manufacturer" and doc.get("manufacturer_id") != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+    products_collection.update_one({"id": product_id}, {"$set": {"status": body.status}})
+    updated = products_collection.find_one({"id": product_id})
+    return _resolve(updated)
 

@@ -2,8 +2,7 @@
 Seed data for the optimization service.
 Loaded once on startup -- skipped if data already exists (idempotent).
 
-Containers use max_side/med_side/min_side ranges (not length/width/height)
-because orientation is determined dynamically by the algorithm.
+Container dimensions use length/height/width (L, H, W) ranges.
 Global rules are fixed by design; only admin can create/modify them.
 """
 
@@ -22,48 +21,76 @@ SEED_CONTAINERS = [
         "name": "Caja-S",
         "description": "Caja pequena -- alta densidad, menor volumen de aire",
         "dims_cm": {
-            "max_side": {"min": 20.0, "max": 35.0},
-            "med_side": {"min": 15.0, "max": 30.0},
-            "min_side": {"min": 10.0, "max": 25.0},
+            "length": {"min": 20.0, "max": 35.0},
+            "height": {"min": 15.0, "max": 30.0},
+            "width":  {"min": 10.0, "max": 25.0},
         },
         "wall_thickness_mm": 3.0,
-        "inner_margin_cm": {"max_side": 0.5, "med_side": 0.5, "min_side": 0.5},
+        "inner_margin_cm": {"length": 0.5, "height": 0.5, "width": 0.5},
         "max_weight_kg": 10.0,
+        "max_air_pct": 5.0,
         "priority": 1,
         "active": True,
-        "local_rules": [],
+        "local_rules": [
+            {"name": "air_max", "value": 5.0},
+        ],
     },
     {
         "id": "c0000000-0000-0000-0000-000000000002",
         "name": "Caja-M",
         "description": "Caja media -- uso general",
         "dims_cm": {
-            "max_side": {"min": 30.0, "max": 50.0},
-            "med_side": {"min": 25.0, "max": 40.0},
-            "min_side": {"min": 20.0, "max": 35.0},
+            "length": {"min": 30.0, "max": 50.0},
+            "height": {"min": 32.0, "max": 32.0},
+            "width":  {"min": 20.0, "max": 35.0},
         },
         "wall_thickness_mm": 3.0,
-        "inner_margin_cm": {"max_side": 0.5, "med_side": 0.5, "min_side": 0.5},
+        "inner_margin_cm": {"length": 0.5, "height": 0.5, "width": 0.5},
         "max_weight_kg": 20.0,
+        "max_air_pct": 10.0,
         "priority": 2,
         "active": True,
-        "local_rules": [],
+        "local_rules": [
+            {"name": "air_max", "value": 10.0},
+        ],
     },
     {
         "id": "c0000000-0000-0000-0000-000000000003",
         "name": "Caja-L",
         "description": "Caja grande -- productos voluminosos o lotes grandes",
         "dims_cm": {
-            "max_side": {"min": 45.0, "max": 70.0},
-            "med_side": {"min": 35.0, "max": 55.0},
-            "min_side": {"min": 30.0, "max": 50.0},
+            "length": {"min": 45.0, "max": 70.0},
+            "height": {"min": 35.0, "max": 55.0},
+            "width":  {"min": 30.0, "max": 50.0},
         },
         "wall_thickness_mm": 4.0,
-        "inner_margin_cm": {"max_side": 0.8, "med_side": 0.8, "min_side": 0.8},
+        "inner_margin_cm": {"length": 0.8, "height": 0.8, "width": 0.8},
         "max_weight_kg": 35.0,
+        "max_air_pct": 5.0,
         "priority": 3,
         "active": True,
-        "local_rules": [],
+        "local_rules": [
+            {"name": "air_max", "value": 5.0},
+        ],
+    },
+    {
+        "id": "c0000000-0000-0000-0000-000000000004",
+        "name": "Caja-XL",
+        "description": "Caja extra grande -- dimensiones fijas, sin rango",
+        "dims_cm": {
+            "length": {"min": 80.0, "max": 80.0},
+            "height": {"min": 60.0, "max": 60.0},
+            "width":  {"min": 55.0, "max": 55.0},
+        },
+        "wall_thickness_mm": 5.0,
+        "inner_margin_cm": {"length": 1.0, "height": 1.0, "width": 1.0},
+        "max_weight_kg": 50.0,
+        "max_air_pct": 5.0,
+        "priority": 4,
+        "active": True,
+        "local_rules": [
+            {"name": "air_max", "value": 5.0},
+        ],
     },
 ]
 
@@ -75,7 +102,7 @@ SEED_RULES = [
     {
         "id": "r0000000-0000-0000-0000-000000000001",
         "name": "Max 2 capas",
-        "description": "El inner no puede apilarse mas de 2 capas dentro del contenedor",
+        "description": "La caja interior no puede apilarse mas de 2 capas dentro del contenedor",
         "constraint": {
             "orientation_locked": False,
             "locked_axis": None,
@@ -86,10 +113,10 @@ SEED_RULES = [
     {
         "id": "r0000000-0000-0000-0000-000000000002",
         "name": "Siempre vertical",
-        "description": "El inner debe ir en posicion vertical: lado mayor hacia arriba",
+        "description": "La caja interior debe ir en posicion vertical: lado mayor hacia arriba",
         "constraint": {
             "orientation_locked": True,
-            "locked_axis": "max_side",
+            "locked_axis": "height",
             "max_stack_layers": None,
         },
         "active": True,
@@ -97,10 +124,10 @@ SEED_RULES = [
     {
         "id": "r0000000-0000-0000-0000-000000000003",
         "name": "Siempre horizontal",
-        "description": "El inner debe ir tumbado: lado menor hacia arriba (posicion plana)",
+        "description": "La caja interior debe ir tumbada: lado menor hacia arriba (posicion plana)",
         "constraint": {
             "orientation_locked": True,
-            "locked_axis": "min_side",
+            "locked_axis": "width",
             "max_stack_layers": None,
         },
         "active": True,
@@ -114,22 +141,39 @@ SEED_RULES = [
 
 SEED_RULE_ASSIGNMENTS = [
     {
-        # Vasos (Vidrio) -- siempre vertical
+        # Vidrio / Vasos + Botellas -- siempre vertical
+        # subfamily_ids non-empty: rule applies only to these subfamilies within Vidrio
         "id": "a0000000-0000-0000-0000-000000000001",
         "rule_id": "r0000000-0000-0000-0000-000000000002",
         "filter": {
-            "family_ids": [],
-            "subfamily_ids": ["b2c7f3e1-2d4c-5f9b-a08e-100000000007"],
+            "family_id": "a1f6e2d0-1c3b-4e8a-9f7d-000000000003",  # Vidrio
+            "subfamily_ids": [
+                "b2c7f3e1-2d4c-5f9b-a08e-100000000007",  # Vasos
+                "b2c7f3e1-2d4c-5f9b-a08e-100000000008",  # Botellas
+            ],
         },
         "active": True,
     },
     {
-        # Botellas (Vidrio) -- siempre vertical
+        # Vidrio (toda la familia) -- max 2 capas
+        # subfamily_ids empty: rule applies to the whole Vidrio family
         "id": "a0000000-0000-0000-0000-000000000002",
-        "rule_id": "r0000000-0000-0000-0000-000000000002",
+        "rule_id": "r0000000-0000-0000-0000-000000000001",
         "filter": {
-            "family_ids": [],
-            "subfamily_ids": ["b2c7f3e1-2d4c-5f9b-a08e-100000000008"],
+            "family_id": "a1f6e2d0-1c3b-4e8a-9f7d-000000000003",  # Vidrio
+            "subfamily_ids": [],
+        },
+        "active": True,
+    },
+    {
+        # Electrónica / Tablets -- siempre horizontal (se empacan planas)
+        "id": "a0000000-0000-0000-0000-000000000003",
+        "rule_id": "r0000000-0000-0000-0000-000000000003",
+        "filter": {
+            "family_id": "a1f6e2d0-1c3b-4e8a-9f7d-000000000005",  # Electrónica
+            "subfamily_ids": [
+                "b2c7f3e1-2d4c-5f9b-a08e-100000000014",  # Tablets
+            ],
         },
         "active": True,
     },

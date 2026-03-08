@@ -1,12 +1,253 @@
-import React from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import AppShell from '../../components/layout/AppShell';
+import { useAuthStore } from '../../store/auth';
+import { fetchAllProducts, type ProductDetail } from '../../api/product';
+import FilterDropdown from '../../components/FilterDropdown/FilterDropdown';
+import '../manufacturer/manufacturer.css';
 
-const ProductPage: React.FC = () => (
-  <AppShell>
-    <div className="pageHeader">
-      <h1 className="pageHeader__title">Producto</h1>
+// ── Family visual identity ────────────────────────────────────────────────
+const FAMILY_META: Record<string, { emoji: string; accent: string }> = {
+  'Iluminación':  { emoji: '💡', accent: '#d97706' },
+  'Textil':       { emoji: '👕', accent: '#16a34a' },
+  'Vidrio':       { emoji: '🫙', accent: '#2563eb' },
+  'Mobiliario':   { emoji: '🪑', accent: '#7c3aed' },
+  'Electrónica':  { emoji: '💻', accent: '#475569' },
+  'Decoración':   { emoji: '🖼️', accent: '#db2777' },
+  'Ferretería':   { emoji: '🔧', accent: '#ea580c' },
+  'Alimentación': { emoji: '🥫', accent: '#dc2626' },
+  'Papelería':    { emoji: '📝', accent: '#ca8a04' },
+  'Juguetería':   { emoji: '🧸', accent: '#9333ea' },
+};
+
+function getFamilyMeta(familyName: string) {
+  return FAMILY_META[familyName] ?? { emoji: '📦', accent: '#111111' };
+}
+
+function getImageUrl(product: ProductDetail): string {
+  return `/products/${product.id}.jpg`;
+}
+
+const STATUS_LABEL: Record<string, string> = {
+  pending:  'Pendiente',
+  proposed: 'Propuesto',
+  accepted: 'Aceptado',
+  rejected: 'Rechazado',
+};
+
+const STATUS_OPTIONS = [
+  { id: 'pending',  name: 'Pendiente' },
+  { id: 'proposed', name: 'Propuesto' },
+  { id: 'accepted', name: 'Aceptado' },
+  { id: 'rejected', name: 'Rechazado' },
+];
+
+// ── Product card ──────────────────────────────────────────────────────────
+const ProductCard: React.FC<{ product: ProductDetail }> = ({ product }) => {
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const [imgError, setImgError] = useState(false);
+  const meta = getFamilyMeta(product.family?.name ?? '');
+  const imageUrl = getImageUrl(product);
+
+  return (
+    <div className="mfr__card">
+      <div className="mfr__card-image" style={{ '--accent': meta.accent } as React.CSSProperties}>
+        {!imgLoaded && !imgError && (
+          <div className="mfr__card-placeholder">
+            <span className="mfr__card-emoji">{meta.emoji}</span>
+          </div>
+        )}
+        {imgError && (
+          <div className="mfr__card-placeholder mfr__card-placeholder--fallback">
+            <span className="mfr__card-emoji">{meta.emoji}</span>
+          </div>
+        )}
+        <img
+          src={imageUrl}
+          alt={product.name}
+          className="mfr__card-img"
+          style={{ opacity: imgLoaded ? 1 : 0 }}
+          onLoad={() => setImgLoaded(true)}
+          onError={() => setImgError(true)}
+        />
+        <span className={`mfr__status-badge mfr__status-badge--${product.status}`}>
+          {STATUS_LABEL[product.status] ?? product.status}
+        </span>
+      </div>
+      <div className="mfr__card-body">
+        <h3 className="mfr__card-name">{product.name.toUpperCase()}</h3>
+        <p className="mfr__card-family">
+          {product.family?.name} · {product.subfamily?.name}
+        </p>
+        <p className="mfr__card-ean">EAN {product.ean_code}</p>
+        <p className="mfr__card-campaign">{product.campaign?.name}</p>
+        {product.sizes.length > 0 && (
+          <div className="mfr__card-sizes">
+            {product.sizes.map((s) => (
+              <span key={s.id} className="mfr__size-tag">{s.name}</span>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
-  </AppShell>
-);
+  );
+};
+
+// ── Main Page ─────────────────────────────────────────────────────────────
+const ProductPage: React.FC = () => {
+  const token = useAuthStore((s) => s.token)!;
+  const [products, setProducts] = useState<ProductDetail[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const [search, setSearch] = useState('');
+  const [familyFilter, setFamilyFilter] = useState('');
+  const [subfamilyFilter, setSubfamilyFilter] = useState('');
+  const [campaignFilter, setCampaignFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+
+  useEffect(() => {
+    setLoading(true);
+    fetchAllProducts(token)
+      .then(setProducts)
+      .catch(() => setError('No se pudieron cargar los productos.'))
+      .finally(() => setLoading(false));
+  }, [token]);
+
+  const handleFamilyChange = (val: string) => {
+    setFamilyFilter(val);
+    setSubfamilyFilter('');
+  };
+
+  const families = useMemo(
+    () => [...new Map(products.filter((p) => p.family).map((p) => [p.family.id, p.family])).values()]
+      .sort((a, b) => a.name.localeCompare(b.name)),
+    [products],
+  );
+  const subfamilies = useMemo(
+    () => [...new Map(
+      products
+        .filter((p) => p.subfamily && (!familyFilter || p.family?.id === familyFilter))
+        .map((p) => [p.subfamily.id, p.subfamily]),
+    ).values()].sort((a, b) => a.name.localeCompare(b.name)),
+    [products, familyFilter],
+  );
+  const campaigns = useMemo(
+    () => [...new Map(products.filter((p) => p.campaign).map((p) => [p.campaign.id, p.campaign])).values()]
+      .sort((a, b) => a.name.localeCompare(b.name)),
+    [products],
+  );
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return products.filter((p) => {
+      if (q && !p.name.toLowerCase().includes(q) && !p.ean_code.toLowerCase().includes(q)) return false;
+      if (familyFilter && p.family?.id !== familyFilter) return false;
+      if (subfamilyFilter && p.subfamily?.id !== subfamilyFilter) return false;
+      if (campaignFilter && p.campaign?.id !== campaignFilter) return false;
+      if (statusFilter && p.status !== statusFilter) return false;
+      return true;
+    });
+  }, [products, search, familyFilter, subfamilyFilter, campaignFilter, statusFilter]);
+
+  const pending   = filtered.filter((p) => p.status === 'pending');
+  const optimized = filtered.filter((p) => p.status !== 'pending');
+
+  return (
+    <AppShell fullWidth>
+      <div className="mfr__page">
+        {loading && <p className="mfr__msg">Cargando productos...</p>}
+        {error && <p className="mfr__msg mfr__msg--error">{error}</p>}
+
+        {!loading && !error && (
+          <>
+            {/* ── Toolbar ──────────────────────────────────────────── */}
+            <div className="ftb__toolbar">
+              <input
+                type="text"
+                className="ftb__search"
+                placeholder="Buscar por nombre o EAN…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              <div className="ftb__sep" />
+              <div className="ftb__filter-row">
+                <FilterDropdown label="FAMILIA" options={families} value={familyFilter} onChange={handleFamilyChange} />
+                <FilterDropdown label="SUBFAMILIA" options={subfamilies} value={subfamilyFilter} onChange={setSubfamilyFilter} disabled={!familyFilter} />
+                <FilterDropdown label="TEMPORADA" options={campaigns} value={campaignFilter} onChange={setCampaignFilter} />
+                <FilterDropdown label="ESTADO" options={STATUS_OPTIONS} value={statusFilter} onChange={setStatusFilter} />
+              </div>
+              {(familyFilter || subfamilyFilter || campaignFilter || statusFilter) && (
+                <>
+                  <div className="ftb__sep" />
+                  <div className="ftb__chips">
+                    {familyFilter && (
+                      <span className="ftb__chip">
+                        {families.find((f) => f.id === familyFilter)?.name.toUpperCase()}
+                        <button className="ftb__chip-remove" onClick={() => handleFamilyChange('')}>×</button>
+                      </span>
+                    )}
+                    {subfamilyFilter && (
+                      <span className="ftb__chip">
+                        {subfamilies.find((s) => s.id === subfamilyFilter)?.name.toUpperCase()}
+                        <button className="ftb__chip-remove" onClick={() => setSubfamilyFilter('')}>×</button>
+                      </span>
+                    )}
+                    {campaignFilter && (
+                      <span className="ftb__chip">
+                        {campaigns.find((c) => c.id === campaignFilter)?.name.toUpperCase()}
+                        <button className="ftb__chip-remove" onClick={() => setCampaignFilter('')}>×</button>
+                      </span>
+                    )}
+                    {statusFilter && (
+                      <span className="ftb__chip">
+                        {STATUS_OPTIONS.find((s) => s.id === statusFilter)?.name.toUpperCase()}
+                        <button className="ftb__chip-remove" onClick={() => setStatusFilter('')}>×</button>
+                      </span>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="mfr__columns">
+              {/* ── Pendientes ────────────────────────────────────── */}
+              <section className="mfr__column">
+                <h2 className="mfr__column-title">
+                  Pendientes
+                  <span className="mfr__column-count">{pending.length}</span>
+                </h2>
+                {pending.length === 0 ? (
+                  <p className="mfr__empty">No hay productos pendientes.</p>
+                ) : (
+                  <div className="mfr__grid">
+                    {pending.map((p) => <ProductCard key={p.id} product={p} />)}
+                  </div>
+                )}
+              </section>
+
+              <div className="mfr__divider" />
+
+              {/* ── Optimizados ───────────────────────────────────── */}
+              <section className="mfr__column">
+                <h2 className="mfr__column-title">
+                  Optimizados
+                  <span className="mfr__column-count">{optimized.length}</span>
+                </h2>
+                {optimized.length === 0 ? (
+                  <p className="mfr__empty">Aún no hay propuestas de empaquetado.</p>
+                ) : (
+                  <div className="mfr__grid">
+                    {optimized.map((p) => <ProductCard key={p.id} product={p} />)}
+                  </div>
+                )}
+              </section>
+            </div>
+          </>
+        )}
+      </div>
+    </AppShell>
+  );
+};
 
 export default ProductPage;
+

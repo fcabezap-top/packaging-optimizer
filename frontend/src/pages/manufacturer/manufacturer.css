@@ -1,0 +1,199 @@
+/* ── Page shell ──────────────────────────────────────────────────────────── */
+.mfr__page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.mfr__msg {
+  padding: var(--size-8);
+  font-size: var(--font-size-s);
+  color: var(--color-content-3);
+}
+.mfr__msg--error {
+  color: var(--color-error);
+}
+
+/* ── Two-column split ────────────────────────────────────────────────────── */
+.mfr__columns {
+  display: flex;
+  flex: 1;
+  gap: 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.mfr__column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: var(--size-6) var(--size-2) var(--size-4);
+}
+
+.mfr__divider {
+  width: 1px;
+  background: var(--color-border);
+  flex-shrink: 0;
+  margin: var(--size-4) 0;
+}
+
+.mfr__column-title {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-content-1);
+  margin-bottom: var(--size-5);
+  display: flex;
+  align-items: center;
+  gap: var(--size-3);
+  flex-shrink: 0;
+}
+
+.mfr__column-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--color-bg-inv);
+  color: var(--color-content-inv);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.mfr__empty {
+  font-size: var(--font-size-s);
+  color: var(--color-content-3);
+  padding: var(--size-4) 0;
+}
+
+/* ── Product grid ─────────────────────────────────────────────────────────── */
+.mfr__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--size-5) var(--size-4);
+  padding-bottom: var(--size-4);
+  align-content: start;
+}
+
+/* ── Product card ─────────────────────────────────────────────────────────── */
+.mfr__card {
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Image area */
+.mfr__card-image {
+  position: relative;
+  width: 100%;
+  padding-top: 100%; /* square */
+  background: color-mix(in srgb, var(--accent, #111) 8%, var(--color-bg));
+  overflow: hidden;
+}
+
+.mfr__card-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mfr__card-emoji {
+  font-size: 3rem;
+  line-height: 1;
+  opacity: 0.5;
+}
+
+.mfr__card-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity 0.3s ease;
+}
+
+/* Status badge overlaid on image */
+.mfr__status-badge {
+  position: absolute;
+  top: var(--size-2);
+  right: var(--size-2);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 2px var(--size-2);
+  border-radius: 2px;
+}
+.mfr__status-badge--pending  { background: var(--color-bg); color: var(--color-content-1); border: 1px solid var(--color-border-strong); }
+.mfr__status-badge--proposed { background: var(--color-bg); color: #2563eb;               border: 1px solid var(--color-border-strong); }
+.mfr__status-badge--accepted { background: var(--color-bg); color: #16a34a;               border: 1px solid var(--color-border-strong); }
+.mfr__status-badge--rejected { background: var(--color-bg); color: #dc2626;               border: 1px solid var(--color-border-strong); }
+
+/* Card body */
+.mfr__card-body {
+  padding: var(--size-3) var(--size-3) var(--size-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-1);
+  flex: 1;
+}
+
+.mfr__card-family {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-content-3);
+  margin: 0;
+}
+
+.mfr__card-name {
+  font-size: var(--font-size-s);
+  font-weight: 600;
+  color: var(--color-content-1);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.mfr__card-ean,
+.mfr__card-campaign {
+  font-size: 11px;
+  color: var(--color-content-3);
+  margin: 0;
+}
+
+.mfr__card-sizes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-1);
+  margin-top: var(--size-2);
+}
+
+.mfr__size-tag {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 1px 6px;
+  border: 1px solid var(--color-border-strong);
+  color: var(--color-content-2);
+}
+
+.mfr__card-actions {
+  display: flex;
+  gap: var(--size-2);
+  margin-top: var(--size-3);
+}
+.mfr__card-actions .btn {
+  flex: 1;
+  padding: var(--size-1) var(--size-2);
+  font-size: 11px;
+}

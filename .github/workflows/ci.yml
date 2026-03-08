@@ -10,6 +10,18 @@ jobs:
   build-and-test:
     name: Build, Test & Docker build
     runs-on: ubuntu-latest
+
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -36,6 +48,8 @@ jobs:
 
       - name: Run unit tests (users-service)
         working-directory: ./users-service
+        env:
+          MONGO_URL: mongodb://localhost:27017
         run: |
           pytest -q
 

@@ -2,7 +2,7 @@
 Container models.
 
 A container is a master box whose dimensions are defined as ranges per axis.
-Sides are named by their relative size: max_side, med_side, min_side.
+Axes are named length (L), height (H) and width (W).
 A fixed dimension is expressed as min == max.
 The optimization algorithm tries each active container ordered by priority
 and picks the best proposal (highest fill%).
@@ -34,15 +34,15 @@ class DimRange(BaseModel):
 
 
 class ContainerDims(BaseModel):
-    max_side: DimRange
-    med_side: DimRange
-    min_side: DimRange
+    length: DimRange
+    height: DimRange
+    width: DimRange
 
 
 class InnerMargin(BaseModel):
-    max_side: float = Field(default=0.5, ge=0)
-    med_side: float = Field(default=0.5, ge=0)
-    min_side: float = Field(default=0.5, ge=0)
+    length: float = Field(default=0.5, ge=0)
+    height: float = Field(default=0.5, ge=0)
+    width: float = Field(default=0.5, ge=0)
 
 
 class ContainerCreate(BaseModel):
@@ -52,6 +52,7 @@ class ContainerCreate(BaseModel):
     wall_thickness_mm: float = Field(default=3.0, ge=0)
     inner_margin_cm: InnerMargin = Field(default_factory=InnerMargin)
     max_weight_kg: float = Field(gt=0)
+    max_air_pct: float = Field(default=5.0, ge=0, le=100)
     priority: int = Field(default=1, ge=1)
     active: bool = True
     local_rules: List[LocalRule] = Field(default_factory=list)
@@ -65,6 +66,7 @@ class ContainerResponse(BaseModel):
     wall_thickness_mm: float
     inner_margin_cm: InnerMargin
     max_weight_kg: float
+    max_air_pct: float
     priority: int
     active: bool
     local_rules: List[LocalRule]
@@ -77,6 +79,7 @@ class ContainerUpdate(BaseModel):
     wall_thickness_mm: Optional[float] = Field(default=None, ge=0)
     inner_margin_cm: Optional[InnerMargin] = None
     max_weight_kg: Optional[float] = Field(default=None, gt=0)
+    max_air_pct: Optional[float] = Field(default=None, ge=0, le=100)
     priority: Optional[int] = Field(default=None, ge=1)
     active: Optional[bool] = None
     local_rules: Optional[List[LocalRule]] = None

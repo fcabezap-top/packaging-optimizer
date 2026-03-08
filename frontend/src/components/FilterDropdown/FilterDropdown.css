@@ -1,0 +1,129 @@
+/* ── Shared FilterDropdown component ──────────────────────────────────────── */
+.fdd__root {
+  position: relative;
+}
+.fdd__root--disabled { opacity: 0.30; pointer-events: none; }
+
+.fdd__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--color-content-1);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  font-family: var(--font-family);
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.fdd__trigger:hover { opacity: 0.7; }
+
+.fdd__arrow {
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+  color: var(--color-content-3);
+}
+.fdd__arrow--open { transform: rotate(180deg); }
+
+.fdd__list {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 160px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-strong);
+  list-style: none;
+  margin: 0;
+  padding: var(--size-1) 0;
+  z-index: 200;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+.fdd__item {
+  padding: var(--size-2) var(--size-5);
+  font-size: var(--font-size-xs);
+  font-family: var(--font-family);
+  letter-spacing: 0.06em;
+  color: var(--color-content-1);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.fdd__item:hover { background: rgba(0,0,0,0.04); }
+.fdd__item--active { font-weight: 700; }
+
+/* ── Shared toolbar primitives ─────────────────────────────────────────────── */
+.ftb__toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--size-5);
+  padding: var(--size-3) var(--size-6);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.ftb__search {
+  width: 280px;
+  height: 28px;
+  padding: 0 var(--size-3);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--color-border-strong);
+  color: var(--color-content-1);
+  font-size: var(--font-size-xs);
+  font-family: var(--font-family);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  outline: none;
+}
+.ftb__search::placeholder { color: var(--color-content-3); }
+.ftb__search:focus { border-bottom-color: var(--color-content-1); }
+
+.ftb__sep {
+  width: 1px;
+  height: 16px;
+  background: var(--color-border);
+  flex-shrink: 0;
+}
+
+.ftb__filter-row {
+  display: flex;
+  align-items: center;
+  gap: var(--size-5);
+}
+
+.ftb__chips {
+  display: flex;
+  align-items: center;
+  gap: var(--size-2);
+}
+
+.ftb__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--size-2);
+  padding: 2px var(--size-3);
+  border: 1px solid var(--color-content-1);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-content-1);
+  white-space: nowrap;
+}
+
+.ftb__chip-remove {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--color-content-3);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  font-family: var(--font-family);
+}
+.ftb__chip-remove:hover { color: var(--color-content-1); }

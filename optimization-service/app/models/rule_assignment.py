@@ -20,23 +20,23 @@ it (e.g. a seasonal campaign rule that is paused between seasons).
 
 from __future__ import annotations
 
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel, Field
 
 
 class AssignmentFilter(BaseModel):
     """Selects which products this assignment applies to.
-    Empty list = no restriction on that dimension (applies to all families/subfamilies).
-    Fragility and campaigns are not product attributes -- they are determined
-    implicitly by belonging to a family or subfamily.
+    family_id is required -- every assignment must belong to a family.
+    subfamily_ids: one or more subfamilies within that family.
+                   Empty list means the rule applies to the whole family.
     """
-    family_ids: List[str] = Field(default_factory=list)
+    family_id: str
     subfamily_ids: List[str] = Field(default_factory=list)
 
 
 class RuleAssignmentCreate(BaseModel):
     rule_id: str
-    filter: AssignmentFilter = Field(default_factory=AssignmentFilter)
+    filter: AssignmentFilter
     active: bool = True
 
 

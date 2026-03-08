@@ -335,8 +335,24 @@ PRODUCTS = [
 ]
 
 # ---------------------------------------------------------------------------
-# 4 Campaigns / Seasons
+# Status map  (default = "pending"; overrides listed here)
+# MFR01 products 1-5:  1=pending, 2=proposed, 3=accepted, 4=rejected, 5=pending
+# MFR02 products 6-20: 6=proposed, 7=accepted, 8=rejected, rest=pending
 # ---------------------------------------------------------------------------
+_STATUS: dict[str, str] = {
+    "f7b2e8a6-7c9d-4d4a-e53d-600000000002": "proposed",
+    "f7b2e8a6-7c9d-4d4a-e53d-600000000003": "accepted",
+    "f7b2e8a6-7c9d-4d4a-e53d-600000000004": "rejected",
+    "f7b2e8a6-7c9d-4d4a-e53d-600000000006": "proposed",
+    "f7b2e8a6-7c9d-4d4a-e53d-600000000007": "accepted",
+    "f7b2e8a6-7c9d-4d4a-e53d-600000000008": "rejected",
+    "f7b2e8a6-7c9d-4d4a-e53d-600000000009": "proposed",
+    "f7b2e8a6-7c9d-4d4a-e53d-600000000013": "accepted",
+    "f7b2e8a6-7c9d-4d4a-e53d-600000000014": "proposed",
+}
+
+for _p in PRODUCTS:
+    _p.setdefault("status", _STATUS.get(_p["id"], "pending"))
 CAMPAIGNS = [
     {"id": "c3d8a4f2-3e5d-6f0c-b19f-200000000001", "name": "Summer 2025"},
     {"id": "c3d8a4f2-3e5d-6f0c-b19f-200000000002", "name": "Winter 2025"},

@@ -1,11 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import AppShell from '../../components/layout/AppShell';
-import { listContainers, fetchContainerRenderHtml, fetchPreviewRenderHtml, deleteContainer, createContainer, type Container, type ContainerCreate } from '../../api/optimization';
+import { listContainers, fetchContainerRenderHtml, fetchPreviewRenderHtml, deleteContainer, createContainer, updateContainer, type Container, type ContainerCreate } from '../../api/optimization';
 import { useAuthStore } from '../../store/auth';
 import './containers.css';
 
 type DimInput = { isRange: boolean; fixed: string; min: string; max: string };
 const emptyDim = (): DimInput => ({ isRange: true, fixed: '', min: '', max: '' });
+const dimFromRange = (dim: { min: number; max: number }): DimInput =>
+  dim.min === dim.max
+    ? { isRange: false, fixed: String(dim.min), min: '', max: '' }
+    : { isRange: true, fixed: '', min: String(dim.min), max: String(dim.max) };
 
 const NumberInput: React.FC<{
   value: string;
@@ -84,7 +88,7 @@ const ContainersPage: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
-  const [showCreate, setShowCreate] = useState(false);
+  const [formMode, setFormMode] = useState<'create' | 'edit' | null>(null);
   const [formL, setFormL] = useState<DimInput>(emptyDim());
   const [formH, setFormH] = useState<DimInput>(emptyDim());
   const [formW, setFormW] = useState<DimInput>(emptyDim());
@@ -104,7 +108,53 @@ const ContainersPage: React.FC = () => {
     formName.trim() !== '' &&
     dimFilled(formL) && dimFilled(formH) && dimFilled(formW) &&
     formPriority !== '' && formMaxAir !== '' && formMaxWeight !== '';
-  const canSave = canPreview && previewHtml !== '';
+  const [previewDirty, setPreviewDirty] = useState(false);
+  const canSave = canPreview && previewHtml !== '' && !previewDirty;
+
+  const resetForm = () => {
+    setFormName('');
+    setFormDesc('');
+    setFormL(emptyDim());
+    setFormH(emptyDim());
+    setFormW(emptyDim());
+    setFormMaxWeight('');
+    setFormPriority('');
+    setFormMaxAir('');
+    setPreviewHtml('');
+    setPreviewReady(false);
+    setPreviewDirty(false);
+  };
+
+  const openCreate = () => { resetForm(); setFormMode('create'); };
+
+  const openEdit = () => {
+    if (!selected) return;
+    setFormName(selected.name);
+    setFormDesc(selected.description ?? '');
+    setFormL(dimFromRange(selected.dims_cm.length));
+    setFormH(dimFromRange(selected.dims_cm.height));
+    setFormW(dimFromRange(selected.dims_cm.width));
+    setFormMaxWeight(String(selected.max_weight_kg));
+    setFormPriority(String(selected.priority));
+    setFormMaxAir(String(selected.max_air_pct));
+    setPreviewHtml('');
+    setPreviewReady(false);
+    setPreviewDirty(false);
+    setFormMode('edit');
+    // Auto-cargar preview con las dimensiones actuales del contenedor
+    setPreviewLoading(true);
+    fetchPreviewRenderHtml(token, {
+      length_min: selected.dims_cm.length.min,
+      length_max: selected.dims_cm.length.max,
+      height_min: selected.dims_cm.height.min,
+      height_max: selected.dims_cm.height.max,
+      width_min:  selected.dims_cm.width.min,
+      width_max:  selected.dims_cm.width.max,
+    })
+      .then((html) => { setPreviewHtml(html); setPreviewDirty(false); })
+      .catch(() => {})
+      .finally(() => setPreviewLoading(false));
+  };
 
   const handleSave = () => {
     const parseDim = (dim: DimInput) => ({
@@ -122,13 +172,17 @@ const ContainersPage: React.FC = () => {
     };
     setSaving(true);
     setSaveError('');
-    createContainer(token, payload)
-      .then((created) =>
+    const op = formMode === 'edit' && selected
+      ? updateContainer(token, selected.id, payload)
+      : createContainer(token, payload);
+    op
+      .then((saved) =>
         listContainers(token).then((data) => {
           const sorted = [...data].sort((a, b) => a.priority - b.priority);
           setContainers(sorted);
-          setSelected(sorted.find((c) => c.id === created.id) ?? sorted[0] ?? null);
-          setShowCreate(false);
+          setSelected(sorted.find((c) => c.id === saved.id) ?? sorted[0] ?? null);
+          resetForm();
+          setFormMode(null);
         })
       )
       .catch(() => setSaveError('No se pudo guardar. Comprueba tu rol.'))
@@ -194,7 +248,7 @@ const ContainersPage: React.FC = () => {
       height_min: h.min, height_max: h.max,
       width_min:  w.min, width_max:  w.max,
     })
-      .then((html) => setPreviewHtml(html))
+      .then((html) => { setPreviewHtml(html); setPreviewDirty(false); })
       .catch(() => {})
       .finally(() => setPreviewLoading(false));
   };
@@ -236,12 +290,12 @@ const ContainersPage: React.FC = () => {
           </div>
         </div>
       )}
-      {showCreate ? (
+      {formMode !== null ? (
         <div className="createForm">
           <div className="createForm__titleRow">
-            <h2 className="createForm__title">Nuevo contenedor</h2>
+            <h2 className="createForm__title">{formMode === 'edit' ? 'Editar contenedor' : 'Nuevo contenedor'}</h2>
             <div className="createForm__titleActions">
-              <button className="btn btn--ghost btn--sm" onClick={() => setShowCreate(false)}>Volver</button>
+              <button className="btn btn--ghost btn--sm" onClick={() => { resetForm(); setFormMode(null); }}>Volver</button>
               <button className="btn btn--ghost btn--sm" onClick={handlePreview} disabled={!canPreview}>Preview</button>
               <button className="btn btn--sm" onClick={handleSave} disabled={!canSave || saving}>
                 {saving ? 'Guardando...' : 'Guardar'}
@@ -271,16 +325,16 @@ const ContainersPage: React.FC = () => {
                 />
               </div>
               <p className="createForm__hint">Define las medidas de cada lado. Pueden ser un rango o una medida fija.</p>
-              <DimRow label="Length" val={formL} set={setFormL} />
-              <DimRow label="Height" val={formH} set={setFormH} />
-              <DimRow label="Width"  val={formW} set={setFormW} />
+              <DimRow label="Length" val={formL} set={(v) => { setFormL(v); setPreviewDirty(true); }} />
+              <DimRow label="Height" val={formH} set={(v) => { setFormH(v); setPreviewDirty(true); }} />
+              <DimRow label="Width"  val={formW} set={(v) => { setFormW(v); setPreviewDirty(true); }} />
               <div className="createForm__airRow">
                 <label className="createForm__airLabel">Peso máximo</label>
                 <div className="createForm__airInput">
                   <input
                     type="number" min="0" placeholder="10"
                     value={formMaxWeight}
-                    onChange={(e) => setFormMaxWeight(e.target.value)}
+                    onChange={(e) => { setFormMaxWeight(e.target.value); setPreviewDirty(true); }}
                   />
                   <span className="createForm__airUnit">kg</span>
                 </div>
@@ -291,10 +345,10 @@ const ContainersPage: React.FC = () => {
                   <input
                     type="number" min="1" placeholder="1"
                     value={formPriority}
-                    onChange={(e) => setFormPriority(e.target.value)}
+                    onChange={(e) => { setFormPriority(e.target.value); setPreviewDirty(true); }}
                   />
                 </div>
-                <p className="createForm__airHint">Si ya existe un contenedor con esta prioridad, ese y todos los posteriores se desplazarán automáticamente una posición hacia abajo.</p>
+                {formMode === 'create' && <p className="createForm__airHint">Si ya existe un contenedor con esta prioridad, ese y todos los posteriores se desplazarán automáticamente una posición hacia abajo.</p>}
               </div>
               <div className="createForm__airRow">
                 <label className="createForm__airLabel">Aire máximo aceptable</label>
@@ -302,7 +356,7 @@ const ContainersPage: React.FC = () => {
                   <input
                     type="number" min="0" max="100" placeholder="5"
                     value={formMaxAir}
-                    onChange={(e) => setFormMaxAir(e.target.value)}
+                    onChange={(e) => { setFormMaxAir(e.target.value); setPreviewDirty(true); }}
                   />
                   <span className="createForm__airUnit">%</span>
                 </div>
@@ -337,20 +391,31 @@ const ContainersPage: React.FC = () => {
                 {!previewHtml && !previewLoading && (
                   <p className="createForm__placeholder">Aquí se generará un preview del contenedor</p>
                 )}
-                {(previewLoading || (previewHtml && !previewReady)) && (
-                  <div className="containerDetail__loading">
-                    <div className="containerDetail__spinner" />
+                {(previewLoading || previewHtml) && (
+                  <div className="containerDetail__renderWrap" style={{ flex: 1, width: '100%', minHeight: 0 }}>
+                    {(previewLoading || (previewHtml && !previewReady)) && (
+                      <div
+                        className="containerDetail__loading"
+                        style={{
+                          opacity: (previewLoading || !previewReady) ? 1 : 0,
+                          transition: previewReady ? 'opacity 0.3s ease' : 'none',
+                          pointerEvents: 'none',
+                        }}
+                      >
+                        <div className="containerDetail__spinner" />
+                      </div>
+                    )}
+                    {previewHtml && (
+                      <iframe
+                        className="containerDetail__render"
+                        style={{ opacity: 1 }}
+                        srcDoc={previewHtml}
+                        title="Preview 3D"
+                        sandbox="allow-scripts"
+                        onLoad={() => setPreviewReady(true)}
+                      />
+                    )}
                   </div>
-                )}
-                {previewHtml && (
-                  <iframe
-                    className="containerDetail__render"
-                    style={{ opacity: previewReady ? 1 : 0, pointerEvents: previewReady ? 'auto' : 'none' }}
-                    srcDoc={previewHtml}
-                    title="Preview 3D"
-                    sandbox="allow-scripts"
-                    onLoad={() => setPreviewReady(true)}
-                  />
                 )}
               </div>
             </div>
@@ -372,6 +437,9 @@ const ContainersPage: React.FC = () => {
           <div className="carousel__track" ref={trackRef}>
             {loading && <p className="carousel__msg">Cargando...</p>}
             {error  && <p className="carousel__msg carousel__msg--error">{error}</p>}
+            {!loading && !error && containers.length === 0 && (
+              <p className="carousel__msg">No hay contenedores aún.</p>
+            )}
             {!loading && !error && containers.map((c) => (
               <button
                 key={c.id}
@@ -394,21 +462,21 @@ const ContainersPage: React.FC = () => {
           </div>{/* end .carousel */}
 
           {/* Panel crear contenedor */}
-          <button className="containerCreate" onClick={() => setShowCreate(true)}>
+          <button className="containerCreate" onClick={openCreate}>
             <span className="containerCreate__icon">+</span>
             <span className="containerCreate__label">Nuevo contenedor</span>
           </button>
           </div>{/* end .containersPage__topRow */}
 
         {/* Detalle seleccionado */}
-        {selected && (
+        {selected ? (
           <div className="containerDetail">
             <div className="containerDetail__header">
               <div>
                 <h2 className="containerDetail__name">{selected.name}</h2>
               </div>
               <div className="containerDetail__actions">
-                <button className="btn btn--ghost btn--sm" disabled>Editar</button>
+                <button className="btn btn--ghost btn--sm" onClick={openEdit}>Editar</button>
                 <button className="btn btn--sm" onClick={() => { setDeleteError(''); setShowDeleteModal(true); }}>Eliminar</button>
               </div>
             </div>
@@ -427,22 +495,35 @@ const ContainersPage: React.FC = () => {
               <span className="containerDetail__dim">Priority {selected.priority}</span>
               <span className="containerDetail__dim">Air max {selected.max_air_pct}%</span>
             </div>
-            {(renderLoading || (renderHtml && !renderReady)) && (
-              <div className="containerDetail__loading">
-                <div className="containerDetail__spinner" />
-              </div>
-            )}
-            {renderHtml && (
-              <iframe
-                className="containerDetail__render"
-                style={{ opacity: renderReady ? 1 : 0, pointerEvents: renderReady ? 'auto' : 'none' }}
-                srcDoc={renderHtml}
-                title={`Render 3D ${selected.name}`}
-                sandbox="allow-scripts"
-                onLoad={() => setRenderReady(true)}
-              />
-            )}
+            <div className="containerDetail__renderWrap">
+              {(renderLoading || renderHtml) && (
+                <div
+                  className="containerDetail__loading"
+                  style={{
+                    opacity: (renderLoading || !renderReady) ? 1 : 0,
+                    transition: renderReady ? 'opacity 0.3s ease' : 'none',
+                    pointerEvents: 'none',
+                  }}
+                >
+                  <div className="containerDetail__spinner" />
+                </div>
+              )}
+              {renderHtml && (
+                <iframe
+                  className="containerDetail__render"
+                  style={{ opacity: 1 }}
+                  srcDoc={renderHtml}
+                  title={`Render 3D ${selected.name}`}
+                  sandbox="allow-scripts"
+                  onLoad={() => setRenderReady(true)}
+                />
+              )}
+            </div>
           </div>
+        ) : (
+          !loading && !error && (
+            <div className="page__emptyDetail"><p>No hay contenedores aún.</p></div>
+          )
         )}
       </div>
       )}

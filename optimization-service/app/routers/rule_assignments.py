@@ -54,11 +54,11 @@ def list_by_rule(rule_id: str, _: TokenData = Depends(require_auth)):
 
 @router.get("/by-family/{family_id}", response_model=list[RuleAssignmentResponse])
 def list_by_family(family_id: str, _: TokenData = Depends(require_auth)):
-    """All active assignments that include a given family_id in their filter."""
+    """All active assignments for a given family_id."""
     return [
         _serialize(d)
         for d in rule_assignments_collection.find(
-            {"filter.family_ids": family_id, "active": True}
+            {"filter.family_id": family_id, "active": True}
         )
     ]
 
@@ -124,8 +124,8 @@ def update_assignment(
 
 
 @router.delete("/{assignment_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_assignment(assignment_id: str, _: TokenData = Depends(require_admin)):
-    """Hard delete an assignment. Admin only."""
+def delete_assignment(assignment_id: str, _: TokenData = Depends(require_reviewer_or_admin)):
+    """Hard delete an assignment. Reviewer/admin only."""
     result = rule_assignments_collection.delete_one({"id": assignment_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assignment not found")

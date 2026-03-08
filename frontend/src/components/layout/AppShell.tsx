@@ -10,16 +10,18 @@ interface Tab {
 }
 
 const TABS: Tab[] = [
-  { label: 'Producto',     path: '/product' },
-  { label: 'Contenedores', path: '/containers', roles: ['reviewer', 'admin'] },
-  { label: 'Reglas',       path: '/rules',      roles: ['reviewer', 'admin'] },
+  { label: 'Producto',     path: '/product',      roles: ['reviewer', 'admin'] },
+  { label: 'Contenedores', path: '/containers',   roles: ['reviewer', 'admin'] },
+  { label: 'Reglas',       path: '/rules',        roles: ['reviewer', 'admin'] },
+  { label: 'Producto',     path: '/manufacturer', roles: ['manufacturer'] },
 ];
 
 interface AppShellProps {
   children: React.ReactNode;
+  fullWidth?: boolean;
 }
 
-const AppShell: React.FC<AppShellProps> = ({ children }) => {
+const AppShell: React.FC<AppShellProps> = ({ children, fullWidth }) => {
   const { username, fullName, role, clearAuth } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
@@ -54,7 +56,7 @@ const AppShell: React.FC<AppShellProps> = ({ children }) => {
         ))}
       </div>
 
-      <main className="shell__content">
+      <main className={`shell__content${(role === 'manufacturer' || fullWidth) ? ' shell__content--full' : ''}`}>
         {children}
       </main>
     </div>

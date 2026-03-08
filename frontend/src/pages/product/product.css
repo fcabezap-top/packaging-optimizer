@@ -1,0 +1,94 @@
+/* ── Page shell ──────────────────────────────────────────────────────────── */
+.prod__page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.prod__msg {
+  padding: var(--size-8);
+  font-size: var(--font-size-s);
+  color: var(--color-content-3);
+}
+.prod__msg--error { color: var(--color-error); }
+
+/* ── Product list ────────────────────────────────────────────────────────── */
+.prod__list-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.prod__list-header {
+  display: grid;
+  grid-template-columns: 2fr 1fr 2fr 1.5fr 1fr;
+  gap: var(--size-4);
+  padding: var(--size-3) var(--size-6);
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--color-content-3);
+  flex-shrink: 0;
+}
+
+.prod__list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.prod__row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 2fr 1.5fr 1fr;
+  gap: var(--size-4);
+  padding: var(--size-3) var(--size-6);
+  border-bottom: 1px solid var(--color-border);
+  align-items: center;
+}
+.prod__row:hover { background: rgba(0,0,0,0.02); }
+
+.prod__row-name {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--color-content-1);
+}
+.prod__row-ean {
+  font-size: var(--font-size-xs);
+  color: var(--color-content-3);
+  letter-spacing: 0.04em;
+}
+.prod__row-family {
+  font-size: var(--font-size-xs);
+  color: var(--color-content-2, var(--color-content-3));
+}
+.prod__row-campaign {
+  font-size: var(--font-size-xs);
+  color: var(--color-content-3);
+}
+
+/* Status */
+.prod__row-status {
+  display: inline-block;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  border: 1px solid var(--color-border-strong);
+  padding: 2px var(--size-3);
+  background: var(--color-bg);
+  color: var(--color-content-1);
+}
+.prod__row-status--proposed { color: #2563eb; }
+.prod__row-status--accepted { color: #16a34a; }
+.prod__row-status--rejected { color: #dc2626; }
+
+.prod__empty {
+  padding: var(--size-8) var(--size-6);
+  font-size: var(--font-size-s);
+  color: var(--color-content-3);
+}
