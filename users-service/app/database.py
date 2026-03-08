@@ -7,5 +7,8 @@ db = client[DATABASE_NAME]
 users_collection = db["users"]
 reset_tokens_collection = db["password_reset_tokens"]
 
-# TTL index: MongoDB elimina automáticamente tokens expirados
-reset_tokens_collection.create_index("expires_at", expireAfterSeconds=0)
+
+def ensure_indexes() -> None:
+    """Create indexes. Called from lifespan, not at import time."""
+    # TTL index: MongoDB eliminates expired tokens automatically
+    reset_tokens_collection.create_index("expires_at", expireAfterSeconds=0)

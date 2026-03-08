@@ -10,6 +10,8 @@ from .seed import run_seed
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    from .database import ensure_indexes
+    ensure_indexes()
     run_seed()
     yield
 
