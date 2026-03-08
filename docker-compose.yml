@@ -11,6 +11,12 @@ services:
     environment:
       - MONGO_URL=mongodb://admin:admin123@mongo:27017/?authSource=admin
       - SECRET_KEY=changeme-use-a-long-random-secret-in-production
+      - SMTP_HOST=smtp.gmail.com
+      - SMTP_PORT=587
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SMTP_FROM=${SMTP_USER}
+      - FRONTEND_URL=http://localhost:5173
     depends_on:
       mongo:
         condition: service_healthy

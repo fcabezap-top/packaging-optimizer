@@ -128,10 +128,36 @@
 }
 
 .dimRow__toggle input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
   cursor: pointer;
-  accent-color: var(--color-content-1);
-  width: 14px;
-  height: 14px;
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 2px solid var(--color-border-strong);
+  background: var(--color-bg);
+  display: grid;
+  place-content: center;
+  transition: border-color 0.15s;
+}
+
+.dimRow__toggle input[type="checkbox"]::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-content-1);
+  transform: scale(0);
+  transition: transform 0.15s ease;
+}
+
+.dimRow__toggle input[type="checkbox"]:checked {
+  border-color: var(--color-content-1);
+}
+
+.dimRow__toggle input[type="checkbox"]:checked::before {
+  transform: scale(1);
 }
 
 .dimRow__inputs {
@@ -253,8 +279,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  align-items: stretch;
   min-height: 0;
   overflow: hidden;
 }
@@ -493,12 +518,22 @@
 
 
 
+.containerDetail__renderWrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .containerDetail__loading {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 1;
-  min-height: 0;
+  background: white;
 }
 
 .containerDetail__spinner {

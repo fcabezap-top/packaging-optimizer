@@ -184,3 +184,13 @@ input, textarea, select {
 .badge--inactive { color: var(--color-content-3); }
 .badge--pending  { color: var(--color-content-2); }
 
+/* Placeholder centrado cuando no hay contenido seleccionado */
+.page__emptyDetail {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-content-1);
+  font-size: var(--font-size-s);
+}
+

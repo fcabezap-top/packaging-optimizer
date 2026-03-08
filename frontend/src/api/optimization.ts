@@ -1,3 +1,5 @@
+import { safeFetch } from './safeFetch';
+
 const BASE = import.meta.env.VITE_OPTIMIZATION_API ?? 'http://localhost:8003';
 
 function authHeader(token: string) {
@@ -62,7 +64,7 @@ export interface RuleCreate {
 }
 
 export interface AssignmentFilter {
-  family_ids: string[];
+  family_id: string;
   subfamily_ids: string[];
 }
 
@@ -82,8 +84,14 @@ export interface RuleAssignmentCreate {
 // ── Renders ───────────────────────────────────────────────────────────────────
 
 export async function fetchContainerRenderHtml(token: string, id: string): Promise<string> {
-  const res = await fetch(`${BASE}/renders/container/${id}`, { headers: authHeader(token) });
+  const res = await safeFetch(`${BASE}/renders/container/${id}`, { headers: authHeader(token) });
   if (!res.ok) throw new Error('render failed');
+  return res.text();
+}
+
+export async function fetchRuleRenderHtml(token: string, ruleId: string): Promise<string> {
+  const res = await safeFetch(`${BASE}/renders/rule/${ruleId}`, { headers: authHeader(token) });
+  if (!res.ok) throw new Error('rule render failed');
   return res.text();
 }
 
@@ -91,7 +99,7 @@ export async function fetchPreviewRenderHtml(
   token: string,
   dims: { length_min: number; length_max: number; height_min: number; height_max: number; width_min: number; width_max: number },
 ): Promise<string> {
-  const res = await fetch(`${BASE}/renders/preview`, {
+  const res = await safeFetch(`${BASE}/renders/preview`, {
     method: 'POST',
     headers: { ...authHeader(token), 'Content-Type': 'application/json' },
     body: JSON.stringify(dims),
@@ -103,13 +111,13 @@ export async function fetchPreviewRenderHtml(
 // ── Containers ────────────────────────────────────────────────────────────────
 
 export async function listContainers(token: string): Promise<Container[]> {
-  const res = await fetch(`${BASE}/containers/all`, { headers: authHeader(token) });
+  const res = await safeFetch(`${BASE}/containers/all`, { headers: authHeader(token) });
   if (!res.ok) throw new Error((await res.json()).detail ?? 'Error fetching containers');
   return res.json();
 }
 
 export async function deleteContainer(token: string, id: string): Promise<void> {
-  const res = await fetch(`${BASE}/containers/${id}`, {
+  const res = await safeFetch(`${BASE}/containers/${id}`, {
     method: 'DELETE',
     headers: authHeader(token),
   });
@@ -117,7 +125,7 @@ export async function deleteContainer(token: string, id: string): Promise<void> 
 }
 
 export async function createContainer(token: string, data: ContainerCreate): Promise<Container> {
-  const res = await fetch(`${BASE}/containers/`, {
+  const res = await safeFetch(`${BASE}/containers/`, {
     method: 'POST',
     headers: authHeader(token),
     body: JSON.stringify(data),
@@ -127,7 +135,7 @@ export async function createContainer(token: string, data: ContainerCreate): Pro
 }
 
 export async function updateContainer(token: string, id: string, data: Partial<ContainerCreate & { active: boolean }>): Promise<Container> {
-  const res = await fetch(`${BASE}/containers/${id}`, {
+  const res = await safeFetch(`${BASE}/containers/${id}`, {
     method: 'PUT',
     headers: authHeader(token),
     body: JSON.stringify(data),
@@ -139,13 +147,13 @@ export async function updateContainer(token: string, id: string, data: Partial<C
 // ── Rules ─────────────────────────────────────────────────────────────────────
 
 export async function listRules(token: string): Promise<Rule[]> {
-  const res = await fetch(`${BASE}/rules/all`, { headers: authHeader(token) });
+  const res = await safeFetch(`${BASE}/rules/all`, { headers: authHeader(token) });
   if (!res.ok) throw new Error((await res.json()).detail ?? 'Error fetching rules');
   return res.json();
 }
 
 export async function createRule(token: string, data: RuleCreate): Promise<Rule> {
-  const res = await fetch(`${BASE}/rules/`, {
+  const res = await safeFetch(`${BASE}/rules/`, {
     method: 'POST',
     headers: authHeader(token),
     body: JSON.stringify(data),
@@ -157,13 +165,13 @@ export async function createRule(token: string, data: RuleCreate): Promise<Rule>
 // ── Rule Assignments ───────────────────────────────────────────────────────────
 
 export async function listRuleAssignments(token: string): Promise<RuleAssignment[]> {
-  const res = await fetch(`${BASE}/rule-assignments/all`, { headers: authHeader(token) });
+  const res = await safeFetch(`${BASE}/rule-assignments/all`, { headers: authHeader(token) });
   if (!res.ok) throw new Error((await res.json()).detail ?? 'Error fetching assignments');
   return res.json();
 }
 
 export async function createRuleAssignment(token: string, data: RuleAssignmentCreate): Promise<RuleAssignment> {
-  const res = await fetch(`${BASE}/rule-assignments/`, {
+  const res = await safeFetch(`${BASE}/rule-assignments/`, {
     method: 'POST',
     headers: authHeader(token),
     body: JSON.stringify(data),
@@ -173,7 +181,7 @@ export async function createRuleAssignment(token: string, data: RuleAssignmentCr
 }
 
 export async function deleteRuleAssignment(token: string, id: string): Promise<void> {
-  const res = await fetch(`${BASE}/rule-assignments/${id}`, {
+  const res = await safeFetch(`${BASE}/rule-assignments/${id}`, {
     method: 'DELETE',
     headers: authHeader(token),
   });

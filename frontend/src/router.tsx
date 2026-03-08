@@ -5,6 +5,7 @@ import ProductPage from './pages/product/ProductPage';
 import ContainersPage from './pages/containers/ContainersPage';
 import RulesPage from './pages/rules/RulesPage';
 import ResetPasswordPage from './pages/reset-password/ResetPasswordPage';
+import ManufacturerPage from './pages/manufacturer/ManufacturerPage';
 import { useAuthStore } from './store/auth';
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -16,25 +17,30 @@ const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const token = useAuthStore((s) => s.token);
+  const role  = useAuthStore((s) => s.role);
   const hydrated = useAuthStore((s) => s._hasHydrated);
   if (!hydrated) return null;
-  return token ? <Navigate to="/product" replace /> : <>{children}</>;
+  if (!token) return <>{children}</>;
+  return <Navigate to={role === 'manufacturer' ? '/manufacturer' : '/product'} replace />;
 };
 
 const SmartRedirect: React.FC = () => {
   const token = useAuthStore((s) => s.token);
+  const role  = useAuthStore((s) => s.role);
   const hydrated = useAuthStore((s) => s._hasHydrated);
   if (!hydrated) return null;
-  return <Navigate to={token ? '/product' : '/login'} replace />;
+  if (!token) return <Navigate to="/login" replace />;
+  return <Navigate to={role === 'manufacturer' ? '/manufacturer' : '/product'} replace />;
 };
 
 const AppRouter: React.FC = () => (
   <BrowserRouter>
     <Routes>
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
-      <Route path="/product"    element={<PrivateRoute><ProductPage /></PrivateRoute>} />
-      <Route path="/containers" element={<PrivateRoute><ContainersPage /></PrivateRoute>} />
-      <Route path="/rules"      element={<PrivateRoute><RulesPage /></PrivateRoute>} />
+      <Route path="/product"      element={<PrivateRoute><ProductPage /></PrivateRoute>} />
+      <Route path="/containers"   element={<PrivateRoute><ContainersPage /></PrivateRoute>} />
+      <Route path="/rules"        element={<PrivateRoute><RulesPage /></PrivateRoute>} />
+      <Route path="/manufacturer" element={<PrivateRoute><ManufacturerPage /></PrivateRoute>} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="*" element={<SmartRedirect />} />
     </Routes>
@@ -42,5 +48,4 @@ const AppRouter: React.FC = () => (
 );
 
 export default AppRouter;
-
 

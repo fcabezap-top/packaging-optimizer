@@ -33,6 +33,7 @@ class ProductResponse(BaseModel):
     subfamily_id: str
     campaign_id: str
     sizes: list[Size]
+    status: str = "pending"
 
 
 class ProductDetailResponse(BaseModel):
@@ -46,6 +47,11 @@ class ProductDetailResponse(BaseModel):
     subfamily_id: str
     campaign_id: str
     sizes: list[Size]
+    status: str = "pending"
     family: FamilyResponse
     subfamily: SubfamilyResponse
     campaign: CampaignResponse
+
+
+class ProductStatusUpdate(BaseModel):
+    status: str  # pending | proposed | accepted | rejected
