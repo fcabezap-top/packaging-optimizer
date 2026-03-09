@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .routers import containers, rules, rule_assignments, renders
+from .routers import containers, rules, rule_assignments, renders, proposals
 from .seed import run_seed
 
 
@@ -29,6 +29,7 @@ app.include_router(containers.router)
 app.include_router(rules.router)
 app.include_router(rule_assignments.router)
 app.include_router(renders.router)
+app.include_router(proposals.router)
 
 
 @app.get("/")
