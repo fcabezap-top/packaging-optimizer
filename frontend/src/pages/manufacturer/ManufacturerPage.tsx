@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import AppShell from '../../components/layout/AppShell';
 import { useAuthStore } from '../../store/auth';
-import { fetchMyProducts, updateProductStatus, type ProductDetail } from '../../api/product';
+import { fetchMyProducts, type ProductDetail } from '../../api/product';
+import { listProposals, type ProposalSummary } from '../../api/optimization';
 import FilterDropdown from '../../components/FilterDropdown/FilterDropdown';
 import './manufacturer.css';
 // ── Family visual identity ────────────────────────────────────────────────
@@ -38,10 +39,10 @@ const STATUS_LABEL: Record<string, string> = {
 // ── Product card ──────────────────────────────────────────────────────────
 interface CardProps {
   product: ProductDetail;
-  onStatusChange?: (id: string, newStatus: string) => void;
+  status: string;
 }
 
-const ProductCard: React.FC<CardProps> = ({ product, onStatusChange }) => {
+const ProductCard: React.FC<CardProps> = ({ product, status }) => {
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
   const meta = getFamilyMeta(product.family.name);
@@ -68,10 +69,8 @@ const ProductCard: React.FC<CardProps> = ({ product, onStatusChange }) => {
           onLoad={() => setImgLoaded(true)}
           onError={() => setImgError(true)}
         />
-        <span
-          className={`mfr__status-badge mfr__status-badge--${product.status}`}
-        >
-          {STATUS_LABEL[product.status] ?? product.status}
+        <span className={`mfr__status-badge mfr__status-badge--${status}`}>
+          {STATUS_LABEL[status] ?? status}
         </span>
       </div>
 
@@ -99,6 +98,7 @@ const ProductCard: React.FC<CardProps> = ({ product, onStatusChange }) => {
 const ManufacturerPage: React.FC = () => {
   const token = useAuthStore((s) => s.token)!;
   const [products, setProducts] = useState<ProductDetail[]>([]);
+  const [proposals, setProposals] = useState<ProposalSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -122,14 +122,24 @@ const ManufacturerPage: React.FC = () => {
       .then(setProducts)
       .catch(() => setError('No se pudieron cargar los productos.'))
       .finally(() => setLoading(false));
+    listProposals(token).then(setProposals).catch(() => {});
   }, [token]);
 
-  const handleStatusChange = (id: string, newStatus: string) => {
-    updateProductStatus(id, newStatus, token)
-      .then((updated) =>
-        setProducts((prev) => prev.map((p) => (p.id === id ? updated : p))),
-      )
-      .catch(() => setError('Error al actualizar el estado.'));
+  const proposalsByProduct = useMemo(
+    () => proposals.reduce((map, p) => {
+      if (!map[p.product_id]) map[p.product_id] = [];
+      map[p.product_id].push(p);
+      return map;
+    }, {} as Record<string, ProposalSummary[]>),
+    [proposals],
+  );
+
+  const getStatus = (productId: string): string => {
+    const props = proposalsByProduct[productId] ?? [];
+    if (props.length === 0) return 'pending';
+    if (props.some((p) => p.status === 'accepted')) return 'accepted';
+    if (props.some((p) => p.status === 'pending')) return 'pending';
+    return 'rejected';
   };
 
   const handleFamilyChange = (val: string) => {
@@ -165,13 +175,13 @@ const ManufacturerPage: React.FC = () => {
       if (familyFilter && p.family.id !== familyFilter) return false;
       if (subfamilyFilter && p.subfamily.id !== subfamilyFilter) return false;
       if (campaignFilter && p.campaign.id !== campaignFilter) return false;
-      if (statusFilter && p.status !== statusFilter) return false;
+      if (statusFilter && getStatus(p.id) !== statusFilter) return false;
       return true;
     });
-  }, [products, search, familyFilter, subfamilyFilter, campaignFilter, statusFilter]);
+  }, [products, proposalsByProduct, search, familyFilter, subfamilyFilter, campaignFilter, statusFilter]);
 
-  const pending = filtered.filter((p) => p.status === 'pending');
-  const optimized = filtered.filter((p) => p.status !== 'pending');
+  const pending = filtered.filter((p) => getStatus(p.id) === 'pending');
+  const optimized = filtered.filter((p) => getStatus(p.id) !== 'pending');
 
   return (
     <AppShell>
@@ -242,7 +252,7 @@ const ManufacturerPage: React.FC = () => {
               ) : (
                 <div className="mfr__grid">
                   {pending.map((p) => (
-                    <ProductCard key={p.id} product={p} />
+                    <ProductCard key={p.id} product={p} status={getStatus(p.id)} />
                   ))}
                 </div>
               )}
@@ -261,7 +271,7 @@ const ManufacturerPage: React.FC = () => {
               ) : (
                 <div className="mfr__grid">
                   {optimized.map((p) => (
-                    <ProductCard key={p.id} product={p} onStatusChange={handleStatusChange} />
+                    <ProductCard key={p.id} product={p} status={getStatus(p.id)} />
                   ))}
                 </div>
               )}

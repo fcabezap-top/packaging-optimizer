@@ -97,7 +97,7 @@ export async function fetchRuleRenderHtml(token: string, ruleId: string): Promis
 
 export async function fetchPreviewRenderHtml(
   token: string,
-  dims: { length_min: number; length_max: number; height_min: number; height_max: number; width_min: number; width_max: number },
+  dims: { length_min: number; length_max: number; height_min: number; height_max: number; width_min: number; width_max: number; wall_thickness_mm?: number },
 ): Promise<string> {
   const res = await safeFetch(`${BASE}/renders/preview`, {
     method: 'POST',
@@ -186,4 +186,21 @@ export async function deleteRuleAssignment(token: string, id: string): Promise<v
     headers: authHeader(token),
   });
   if (!res.ok) throw new Error((await res.json()).detail ?? 'Error deleting assignment');
+}
+
+// ── Proposals ───────────────────────────────────────────────────────────────
+
+export interface ProposalSummary {
+  id: string;
+  product_id: string;
+  size_id: string;
+  status: string;
+  created_at: string;
+}
+
+export async function listProposals(token: string, productId?: string): Promise<ProposalSummary[]> {
+  const params = productId ? `?product_id=${encodeURIComponent(productId)}` : '';
+  const res = await safeFetch(`${BASE}/proposals/${params}`, { headers: authHeader(token) });
+  if (!res.ok) throw new Error('Error fetching proposals');
+  return res.json();
 }

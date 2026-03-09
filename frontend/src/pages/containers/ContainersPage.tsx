@@ -85,6 +85,7 @@ const ContainersPage: React.FC = () => {
   const [renderHtml, setRenderHtml] = useState<string>('');
   const [renderLoading, setRenderLoading] = useState(false);
   const [renderReady, setRenderReady] = useState(false);
+  const [renderKey, setRenderKey] = useState(0);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
@@ -94,6 +95,7 @@ const ContainersPage: React.FC = () => {
   const [formW, setFormW] = useState<DimInput>(emptyDim());
   const [formMaxAir, setFormMaxAir] = useState('');
   const [formMaxWeight, setFormMaxWeight] = useState('');
+  const [formWallThickness, setFormWallThickness] = useState('');
   const [formName, setFormName] = useState('');
   const [formDesc, setFormDesc] = useState('');
   const [formPriority, setFormPriority] = useState('');
@@ -120,6 +122,7 @@ const ContainersPage: React.FC = () => {
     setFormMaxWeight('');
     setFormPriority('');
     setFormMaxAir('');
+    setFormWallThickness('');
     setPreviewHtml('');
     setPreviewReady(false);
     setPreviewDirty(false);
@@ -137,6 +140,7 @@ const ContainersPage: React.FC = () => {
     setFormMaxWeight(String(selected.max_weight_kg));
     setFormPriority(String(selected.priority));
     setFormMaxAir(String(selected.max_air_pct));
+    setFormWallThickness(String(selected.wall_thickness_mm));
     setPreviewHtml('');
     setPreviewReady(false);
     setPreviewDirty(false);
@@ -150,6 +154,7 @@ const ContainersPage: React.FC = () => {
       height_max: selected.dims_cm.height.max,
       width_min:  selected.dims_cm.width.min,
       width_max:  selected.dims_cm.width.max,
+      wall_thickness_mm: selected.wall_thickness_mm,
     })
       .then((html) => { setPreviewHtml(html); setPreviewDirty(false); })
       .catch(() => {})
@@ -165,6 +170,7 @@ const ContainersPage: React.FC = () => {
       name: formName.trim(),
       description: formDesc.trim() || undefined,
       dims_cm: { length: parseDim(formL), height: parseDim(formH), width: parseDim(formW) },
+      wall_thickness_mm: parseFloat(formWallThickness) || 0,
       priority: parseInt(formPriority) || 1,
       max_air_pct: parseFloat(formMaxAir) || 0,
       max_weight_kg: parseFloat(formMaxWeight) || 0,
@@ -181,6 +187,7 @@ const ContainersPage: React.FC = () => {
           const sorted = [...data].sort((a, b) => a.priority - b.priority);
           setContainers(sorted);
           setSelected(sorted.find((c) => c.id === saved.id) ?? sorted[0] ?? null);
+          setRenderKey((k) => k + 1);
           resetForm();
           setFormMode(null);
         })
@@ -200,7 +207,7 @@ const ContainersPage: React.FC = () => {
       .finally(() => setLoading(false));
   }, [token]);
 
-  // Fetch 3D render HTML whenever selected container changes
+  // Fetch 3D render HTML whenever selected container changes or is saved
   useEffect(() => {
     if (!selected) return;
     setRenderHtml('');
@@ -210,7 +217,7 @@ const ContainersPage: React.FC = () => {
       .then((html) => setRenderHtml(html))
       .catch(() => {})
       .finally(() => setRenderLoading(false));
-  }, [selected?.id, token]);
+  }, [selected?.id, token, renderKey]);
 
   const updateArrows = () => {
     const el = trackRef.current;
@@ -247,6 +254,7 @@ const ContainersPage: React.FC = () => {
       length_min: l.min, length_max: l.max,
       height_min: h.min, height_max: h.max,
       width_min:  w.min, width_max:  w.max,
+      wall_thickness_mm: parseFloat(formWallThickness) || 0,
     })
       .then((html) => { setPreviewHtml(html); setPreviewDirty(false); })
       .catch(() => {})
@@ -329,6 +337,17 @@ const ContainersPage: React.FC = () => {
               <DimRow label="Height" val={formH} set={(v) => { setFormH(v); setPreviewDirty(true); }} />
               <DimRow label="Width"  val={formW} set={(v) => { setFormW(v); setPreviewDirty(true); }} />
               <div className="createForm__airRow">
+                <label className="createForm__airLabel">Grosor del cartón</label>
+                <div className="createForm__airInput">
+                  <input
+                    type="number" min="0" step="0.5" placeholder="3"
+                    value={formWallThickness}
+                    onChange={(e) => { setFormWallThickness(e.target.value); setPreviewDirty(true); }}
+                  />
+                  <span className="createForm__airUnit">mm</span>
+                </div>
+              </div>
+              <div className="createForm__airRow">
                 <label className="createForm__airLabel">Peso máximo</label>
                 <div className="createForm__airInput">
                   <input
@@ -379,6 +398,7 @@ const ContainersPage: React.FC = () => {
                             {label} {dim.min === dim.max ? `${dim.min} cm` : `${dim.min}–${dim.max} cm`}
                           </span>
                         ))}
+                        {formWallThickness && <span className="containerDetail__dim">Grosor cartón {formWallThickness} mm</span>}
                         {formMaxWeight && <span className="containerDetail__dim">Max weight {formMaxWeight} kg</span>}
                         {formPriority && <span className="containerDetail__dim">Priority {formPriority}</span>}
                         {formMaxAir && <span className="containerDetail__dim">Air max {formMaxAir}%</span>}
@@ -491,6 +511,7 @@ const ContainersPage: React.FC = () => {
                   {label} {dim.min === dim.max ? `${dim.min} cm` : `${dim.min}–${dim.max} cm`}
                 </span>
               ))}
+              <span className="containerDetail__dim">Grosor cartón {selected.wall_thickness_mm} mm</span>
               <span className="containerDetail__dim">Max weight {selected.max_weight_kg} kg</span>
               <span className="containerDetail__dim">Priority {selected.priority}</span>
               <span className="containerDetail__dim">Air max {selected.max_air_pct}%</span>

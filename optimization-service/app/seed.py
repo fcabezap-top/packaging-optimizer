@@ -29,7 +29,7 @@ SEED_CONTAINERS = [
         "inner_margin_cm": {"length": 0.5, "height": 0.5, "width": 0.5},
         "max_weight_kg": 10.0,
         "max_air_pct": 5.0,
-        "priority": 1,
+        "priority": 3,
         "active": True,
         "local_rules": [
             {"name": "air_max", "value": 5.0},
@@ -67,7 +67,7 @@ SEED_CONTAINERS = [
         "inner_margin_cm": {"length": 0.8, "height": 0.8, "width": 0.8},
         "max_weight_kg": 35.0,
         "max_air_pct": 5.0,
-        "priority": 3,
+        "priority": 1,
         "active": True,
         "local_rules": [
             {"name": "air_max", "value": 5.0},

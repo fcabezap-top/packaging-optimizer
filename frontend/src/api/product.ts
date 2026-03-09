@@ -35,7 +35,6 @@ export interface ProductDetail {
   subfamily_id: string;
   campaign_id: string;
   sizes: ProductSize[];
-  status: string;
   family: Family;
   subfamily: Subfamily;
   campaign: { id: string; name: string };
@@ -65,16 +64,3 @@ export async function fetchMyProducts(token: string): Promise<ProductDetail[]> {
   return res.json();
 }
 
-export async function updateProductStatus(
-  id: string,
-  status: string,
-  token: string,
-): Promise<ProductDetail> {
-  const res = await safeFetch(`${BASE}/products/${id}/status`, {
-    method: 'PATCH',
-    headers: authHeader(token),
-    body: JSON.stringify({ status }),
-  });
-  if (!res.ok) throw new Error((await res.json()).detail ?? 'Error updating status');
-  return res.json();
-}

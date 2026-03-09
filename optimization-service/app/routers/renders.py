@@ -266,22 +266,44 @@ def _build_container_figure(doc: dict) -> go.Figure:
     H_min = dims["height"]["min"];  H_max = dims["height"]["max"]
     W_min = dims["width"]["min"];   W_max = dims["width"]["max"]
     name  = doc["name"]
+    wall_cm = doc.get("wall_thickness_mm", 0) / 10.0
 
     traces = []
 
-    # Outer box — max dims — azul
-    traces.extend(_box_faces(0, 0, 0, L_max, W_max, H_max,
-                              f"{name} — máx", opacity=0.25, color="#4da3ff"))
+    # Outer box — solo contorno, sin relleno
     traces.append(_box_edges(0, 0, 0, L_max, W_max, H_max,
-                              "Contorno máx", width=2, color="#1a73e8"))
+                              f"{name} — máx", width=2, color="#1a73e8"))
 
-    # Inner box — min dims — verde (solo si hay al menos un rango no fijo)
+    # Inner box — min dims — solo contorno + relleno útil (igual que el máx)
     all_fixed = (L_min == L_max and H_min == H_max and W_min == W_max)
     if not all_fixed:
-        traces.extend(_box_faces(0, 0, 0, L_min, W_min, H_min,
-                                  f"{name} — mín", opacity=0.15, color="#34A883"))
         traces.append(_box_edges(0, 0, 0, L_min, W_min, H_min,
-                                  "Contorno mín", width=2.5, color="#2E7D61"))
+                                  f"{name} — mín", width=2.5, color="#2E7D61"))
+        if wall_cm > 0:
+            iL_min = max(L_min - 2 * wall_cm, 0)
+            iW_min = max(W_min - 2 * wall_cm, 0)
+            iH_min = max(H_min - 2 * wall_cm - 1.0, 0)
+            traces.extend(_box_faces(wall_cm, wall_cm, wall_cm, iL_min, iW_min, iH_min,
+                                      f"{name} — mín interior útil",
+                                      opacity=0.15, color="#34A883"))
+        else:
+            traces.extend(_box_faces(0, 0, 0, L_min, W_min, H_min,
+                                      f"{name} — mín", opacity=0.15, color="#34A883"))
+
+    # Espacio útil — azul con relleno (descontando paredes y solapa 1 cm arriba)
+    if wall_cm > 0:
+        iL = max(L_max - 2 * wall_cm, 0)
+        iW = max(W_max - 2 * wall_cm, 0)
+        iH = max(H_max - 2 * wall_cm - 1.0, 0)
+        traces.extend(_box_faces(wall_cm, wall_cm, wall_cm, iL, iW, iH,
+                                  f"Interior útil (pared {doc['wall_thickness_mm']:.0f} mm · solapa 1 cm)",
+                                  opacity=0.25, color="#4da3ff"))
+        traces.append(_box_edges(wall_cm, wall_cm, wall_cm, iL, iW, iH,
+                                  "Contorno interior útil", width=2, color="#1a73e8"))
+    else:
+        # Sin grosor definido: azul sobre el exterior completo (comportamiento original)
+        traces.extend(_box_faces(0, 0, 0, L_max, W_max, H_max,
+                                  f"{name} — máx", opacity=0.25, color="#4da3ff"))
 
     # Dimension annotations
     traces += _dim_annotations_range(L_min, L_max, H_min, H_max, W_min, W_max)
@@ -486,6 +508,7 @@ class PreviewRequest(BaseModel):
     height_max: float
     width_min: float
     width_max: float
+    wall_thickness_mm: float = 0.0
 
 
 @router.post("/preview", response_class=HTMLResponse)
@@ -501,6 +524,7 @@ def render_preview(
             "height": {"min": req.height_min, "max": req.height_max},
             "width":  {"min": req.width_min,  "max": req.width_max},
         },
+        "wall_thickness_mm": req.wall_thickness_mm,
     }
     return HTMLResponse(content=_figure_to_html(_build_container_figure(doc)))
 
