@@ -16,7 +16,7 @@ from datetime import datetime
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field
 
 
 # ---------------------------------------------------------------------------
@@ -101,6 +101,7 @@ class MasterResult(BaseModel):
     total_weight_kg: float
     accepted: bool                 # True if this was the selected proposal
     extras: Optional[List[dict]] = None  # frontal/side prisma fill blocks for the renderer
+    container_priority: Optional[int] = None
 
 
 # ---------------------------------------------------------------------------
@@ -149,11 +150,5 @@ class ProposalStatusUpdate(BaseModel):
     status: ProposalStatus
     rejection_reason: Optional[str] = Field(
         default=None,
-        description="Required when status is 'rejected'",
+        description="Optional note when status is 'rejected'",
     )
-
-    @model_validator(mode="after")
-    def _rejection_reason_required(self) -> "ProposalStatusUpdate":
-        if self.status == ProposalStatus.rejected and not self.rejection_reason:
-            raise ValueError("rejection_reason is required when rejecting a proposal")
-        return self

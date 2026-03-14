@@ -104,6 +104,7 @@ _SUB_PANTALONES  = "b2c7f3e1-2d4c-5f9b-a08e-100000000005"  # Textil
 _SUB_ROPA_CAMA   = "b2c7f3e1-2d4c-5f9b-a08e-100000000006"  # Textil
 _SUB_VASOS       = "b2c7f3e1-2d4c-5f9b-a08e-100000000007"  # Vidrio
 _SUB_BOTELLAS    = "b2c7f3e1-2d4c-5f9b-a08e-100000000008"  # Vidrio
+_SUB_ESPEJOS     = "b2c7f3e1-2d4c-5f9b-a08e-100000000009"  # Vidrio
 _SUB_SILLAS      = "b2c7f3e1-2d4c-5f9b-a08e-100000000010"  # Mobiliario
 _SUB_MESAS       = "b2c7f3e1-2d4c-5f9b-a08e-100000000011"  # Mobiliario
 _SUB_SMARTPHONES = "b2c7f3e1-2d4c-5f9b-a08e-100000000013"  # Electrónica
@@ -332,6 +333,18 @@ PRODUCTS = [
         "family_id": _FAM_JU, "subfamily_id": _SUB_CONSTRUC, "campaign_id": _CAMP_W26,
         "sizes": [_sz(0, "100 pzs", 20), _sz(1, "250 pzs", 20), _sz(2, "500 pzs", 20)],
     },
+    # 21 – Espejo decorativo redondo bambú (Vidrio / Espejos decorativos) – Summer 2026
+    # Reglas activas: solo "Max 2 capas" (familia Vidrio completa).
+    # NO tiene "Siempre vertical" (esa regla solo aplica a Vasos y Botellas).
+    {
+        "id": "f7b2e8a6-7c9d-4d4a-e53d-600000000021",
+        "name": "Espejo decorativo redondo bambú",
+        "description": "Espejo redondo de pared con marco de bambú natural. Ideal para salón o dormitorio. Disponible en varios diámetros.",
+        "ean_code": "8400000100021",
+        "manufacturer_id": _MFR02,
+        "family_id": _FAM_VI, "subfamily_id": _SUB_ESPEJOS, "campaign_id": _CAMP_S26,
+        "sizes": [_sz(0, "40cm", 21), _sz(1, "60cm", 21), _sz(2, "80cm", 21)],
+    },
 ]
 
 # ---------------------------------------------------------------------------
@@ -386,4 +399,7 @@ def run_seed() -> None:
         products_collection.insert_many(PRODUCTS)
         print(f"[seed] Inserted {len(PRODUCTS)} products.")
     else:
-        print("[seed] Products already exist – skipping.")
+        # Upsert any products that may have been added to the seed after initial load
+        for product in PRODUCTS:
+            products_collection.update_one({"id": product["id"]}, {"$setOnInsert": product}, upsert=True)
+        print("[seed] Products already exist – upserted any new entries.")

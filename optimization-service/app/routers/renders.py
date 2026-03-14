@@ -23,8 +23,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
-from ..database import containers_collection, rules_collection
-from ..security import TokenData, require_reviewer_or_admin
+from ..database import containers_collection, rules_collection, proposals_collection
+from ..security import TokenData, require_reviewer_or_admin, require_auth
 
 router = APIRouter(prefix="/renders", tags=["Renders"])
 
@@ -61,6 +61,90 @@ def _box_faces(
         _face([[x,  x],[x,  x]], [[y,  y1],[y,  y1]], [[z,  z ],[z1, z1]]),               # left
         _face([[x1,x1],[x1,x1]], [[y,  y1],[y,  y1]], [[z,  z ],[z1, z1]]),               # right
     ]
+
+
+def _box_mesh(
+    x: float, y: float, z: float,
+    dx: float, dy: float, dz: float,
+    name: str,
+    opacity: float = 0.25,
+    color: str = "#4da3ff",
+    showlegend: bool = True,
+) -> go.Mesh3d:
+    """Solid box using go.Mesh3d (8 vertices, 12 triangles)."""
+    X = [x,    x+dx, x+dx, x,    x,    x+dx, x+dx, x   ]
+    Y = [y,    y,    y+dy, y+dy, y,    y,    y+dy, y+dy ]
+    Z = [z,    z,    z,    z,    z+dz, z+dz, z+dz, z+dz ]
+    ii = [0, 0, 0, 1, 1, 2, 4, 4, 5, 0, 2, 3]
+    jj = [1, 3, 4, 2, 5, 3, 5, 6, 7, 4, 6, 7]
+    kk = [2, 2, 5, 3, 6, 6, 6, 7, 4, 1, 7, 0]
+    return go.Mesh3d(
+        x=X, y=Y, z=Z,
+        i=ii, j=jj, k=kk,
+        opacity=opacity,
+        color=color,
+        flatshading=True,
+        name=name,
+        showlegend=showlegend,
+        hoverinfo="skip",
+    )
+
+
+def _batch_box_meshes(
+    boxes: list,
+    name: str,
+    opacity: float = 0.35,
+    color: str = "#4da3ff",
+    showlegend: bool = True,
+) -> go.Mesh3d:
+    """Merge any number of boxes into one Mesh3d trace (8 verts × N, 12 tris × N)."""
+    _ii = [0, 0, 0, 1, 1, 2, 4, 4, 5, 0, 2, 3]
+    _jj = [1, 3, 4, 2, 5, 3, 5, 6, 7, 4, 6, 7]
+    _kk = [2, 2, 5, 3, 6, 6, 6, 7, 4, 1, 7, 0]
+    all_X: list = []; all_Y: list = []; all_Z: list = []
+    all_i: list = []; all_j: list = []; all_k: list = []
+    for (x, y, z, dx, dy, dz) in boxes:
+        off = len(all_X)
+        all_X += [x,    x+dx, x+dx, x,    x,    x+dx, x+dx, x   ]
+        all_Y += [y,    y,    y+dy, y+dy, y,    y,    y+dy, y+dy ]
+        all_Z += [z,    z,    z,    z,    z+dz, z+dz, z+dz, z+dz ]
+        all_i += [off + v for v in _ii]
+        all_j += [off + v for v in _jj]
+        all_k += [off + v for v in _kk]
+    return go.Mesh3d(
+        x=all_X, y=all_Y, z=all_Z,
+        i=all_i, j=all_j, k=all_k,
+        opacity=opacity, color=color,
+        flatshading=True, name=name,
+        showlegend=showlegend, hoverinfo="skip",
+    )
+
+
+def _batch_box_edges(
+    boxes: list,
+    name: str,
+    width: float = 2,
+    color: str = "#1a73e8",
+) -> go.Scatter3d:
+    """Merge any number of box wireframes into one Scatter3d trace."""
+    xs: list = []; ys: list = []; zs: list = []
+    for (x, y, z, dx, dy, dz) in boxes:
+        x1, y1, z1 = x+dx, y+dy, z+dz
+        segs = [
+            [(x,y,z),(x1,y,z),(x1,y1,z),(x,y1,z),(x,y,z)],
+            [(x,y,z1),(x1,y,z1),(x1,y1,z1),(x,y1,z1),(x,y,z1)],
+            [(x,y,z),(x,y,z1)], [(x1,y,z),(x1,y,z1)],
+            [(x1,y1,z),(x1,y1,z1)], [(x,y1,z),(x,y1,z1)],
+        ]
+        for seg in segs:
+            for p in seg:
+                xs.append(p[0]); ys.append(p[1]); zs.append(p[2])
+            xs.append(None); ys.append(None); zs.append(None)
+    return go.Scatter3d(
+        x=xs, y=ys, z=zs, mode="lines",
+        line=dict(width=width, color=color),
+        name=name, showlegend=False, hoverinfo="skip",
+    )
 
 
 def _box_edges(
@@ -471,6 +555,287 @@ def _build_constraint_figure(rule_doc: dict) -> go.Figure:
     return fig
 
 
+# ── Proposal figure ───────────────────────────────────────────────────────────
+
+def _dim_annotations_3d(
+    L: float, W: float, H: float,
+    line_color: str = "#999999",
+    text_color: str = "#777777",
+    font_size: int = 13,
+) -> List[go.Scatter3d]:
+    """
+    Technical dimension annotations (cotas) L / W / H identical to the reference PDF renderer.
+      H  →  right-front edge  (x=L, y=0),  vertical   z 0→H
+      W  →  right-front edge  (x=L, z=–),  horizontal y 0→W
+      L  →  back-bottom edge  (y=W, z=–),  horizontal x 0→L
+    """
+    gap  = max(L, W, H) * 0.08
+    tick = gap * 0.25
+    traces: List[go.Scatter3d] = []
+
+    def _line(xs, ys, zs, label, tx, ty, tz, tpos="middle right"):
+        traces.append(go.Scatter3d(
+            x=xs, y=ys, z=zs, mode="lines",
+            line=dict(color=line_color, width=3),
+            showlegend=False, hoverinfo="skip",
+        ))
+        traces.append(go.Scatter3d(
+            x=[tx], y=[ty], z=[tz], mode="text",
+            text=[label],
+            textfont=dict(color=text_color, size=font_size, family="'Inter', Arial"),
+            textposition=tpos,
+            showlegend=False, hoverinfo="skip",
+        ))
+
+    # ── H: right-front edge (x=L, y=0), vertical ─────────────────────────────
+    hx = L + gap * 1.1
+    hy = 0.0
+    _line([hx, hx], [hy, hy], [0, H], f"H  {H:.1f} cm",
+          hx - tick * 0.5, hy, H / 2, "middle left")
+    for zz in (0, H):
+        traces.append(go.Scatter3d(x=[hx - tick, hx + tick], y=[hy, hy], z=[zz, zz],
+                                   mode="lines", line=dict(color=line_color, width=2),
+                                   showlegend=False, hoverinfo="skip"))
+
+    # ── W: right-front edge (x=L, z=–), horizontal ───────────────────────────
+    wx = L + gap * 1.1
+    wz = -gap * 0.6
+    _line([wx, wx], [0, W], [wz, wz], f"W  {W:.1f} cm",
+          wx + tick, W / 2, wz, "middle right")
+    for yy in (0, W):
+        traces.append(go.Scatter3d(x=[wx - tick, wx + tick], y=[yy, yy], z=[wz, wz],
+                                   mode="lines", line=dict(color=line_color, width=2),
+                                   showlegend=False, hoverinfo="skip"))
+
+    # ── L: back-bottom edge (y=W, z=–), horizontal ───────────────────────────
+    ly = W + gap * 1.1
+    lz = -gap * 0.6
+    _line([0, L], [ly, ly], [lz, lz], f"L  {L:.1f} cm",
+          L / 2, ly + tick, lz, "bottom center")
+    for xx in (0, L):
+        traces.append(go.Scatter3d(x=[xx, xx], y=[ly - tick, ly + tick], z=[lz, lz],
+                                   mode="lines", line=dict(color=line_color, width=2),
+                                   showlegend=False, hoverinfo="skip"))
+
+    return traces
+
+
+def _opening_tape_top(
+    L: float, W: float, H: float,
+    color: str = "#BA4747",
+    opacity: float = 0.70,
+    tape_w: float = 5.0,
+    tape_t: float = 0.05,
+    drop: float = 2.0,
+    edge_t: float = 0.25,
+    off: float = 0.10,
+) -> List:
+    """Kraft paper seal on top of master box (always top, same as reference)."""
+    traces: list = []
+    if L >= W:
+        # tape runs along X, centered in Y
+        traces.append(_box_mesh(0, (W - tape_w) / 2, H + off,
+                                L, tape_w, tape_t,
+                                "Closure (kraft paper seal)", opacity=opacity, color=color))
+        traces.append(_box_mesh(-edge_t, (W - tape_w) / 2, H + off - drop,
+                                edge_t, tape_w, drop,
+                                "Closure edge", opacity=opacity, color=color, showlegend=False))
+        traces.append(_box_mesh(L, (W - tape_w) / 2, H + off - drop,
+                                edge_t, tape_w, drop,
+                                "Closure edge", opacity=opacity, color=color, showlegend=False))
+    else:
+        # tape runs along Y, centered in X
+        traces.append(_box_mesh((L - tape_w) / 2, 0, H + off,
+                                tape_w, W, tape_t,
+                                "Closure (kraft paper seal)", opacity=opacity, color=color))
+        traces.append(_box_mesh((L - tape_w) / 2, -edge_t, H + off - drop,
+                                tape_w, edge_t, drop,
+                                "Closure edge", opacity=opacity, color=color, showlegend=False))
+        traces.append(_box_mesh((L - tape_w) / 2, W, H + off - drop,
+                                tape_w, edge_t, drop,
+                                "Closure edge", opacity=opacity, color=color, showlegend=False))
+    return traces
+
+
+def _build_proposal_figure(doc: dict) -> go.Figure:
+    """
+    3-D render of a full proposal:
+      • Master container (gray wireframe + Mesh3d fill)
+      • Grid of inner boxes (blue Mesh3d + wireframe)
+      • extras packs from selected_master.extras (same blue)
+      • ONE article (yellow) inside the first inner box
+    """
+    traces: list = []
+
+    master   = doc.get("selected_master") or {}
+    inner_box = doc.get("inner_box") or {}
+
+    if not master:
+        fig = go.Figure()
+        fig.add_annotation(text="No master result available", showarrow=False,
+                           font=dict(size=16))
+        return fig
+
+    ext = master.get("ext_dims") or [0, 0, 0]
+    bL, bW, bH = float(ext[0]), float(ext[1]), float(ext[2])
+    if bL <= 0 or bW <= 0 or bH <= 0:
+        fig = go.Figure()
+        fig.add_annotation(text="Invalid master dimensions", showarrow=False)
+        return fig
+
+    # ── Master box ─────────────────────────────────────────────────────────────
+    traces.append(_box_mesh  (0, 0, 0, bL, bW, bH, "Contenedor", opacity=0.10, color="#9aa0a6", showlegend=True))
+    traces.append(_box_edges (0, 0, 0, bL, bW, bH, "Contenedor", width=4, color="#DCDEDC"))
+    traces.extend(_opening_tape_top(bL, bW, bH))
+
+    # ── Inner boxes (primary grid + extras) — batched into 2 traces ──────────
+    grid = master.get("grid") or [1, 1, 1]
+    ir   = master.get("inner_dims_rotated") or [
+        inner_box.get("ext_max_cm", 1),
+        inner_box.get("ext_med_cm", 1),
+        inner_box.get("ext_min_cm", 1),
+    ]
+    nL, nW, nH = int(grid[0]), int(grid[1]), int(grid[2])
+    Lr, Wr, Hr = float(ir[0]), float(ir[1]), float(ir[2])
+
+    # ── Centering offsets ──────────────────────────────────────────────────────
+    # L/W: center grid within util space (wall margin split equally both sides)
+    util  = master.get("util_dims") or ext
+    Lu, Wu, Hu = float(util[0]), float(util[1]), float(util[2])
+    x_wall = max(0.0, bL - Lu) / 2.0
+    y_wall = max(0.0, bW - Wu) / 2.0
+    # H: (H_ext - H_util) = 2*wall + 1cm_flap; bottom wall = half of that minus the flap
+    h_margins = max(0.0, bH - Hu)
+    z_wall = max(0.0, h_margins - 1.0) / 2.0
+    # Slack within util after grid, split equally
+    x_off = x_wall + max(0.0, Lu - nL * Lr) / 2.0
+    y_off = y_wall + max(0.0, Wu - nW * Wr) / 2.0
+    z_off = z_wall + max(0.0, Hu - nH * Hr) / 2.0
+
+    # ── Inner boxes (primary grid + extras) — batched into 2 traces ──────────
+    inner_rects: list = []
+    for i in range(nL):
+        for j in range(nW):
+            for k in range(nH):
+                inner_rects.append((x_off + i * Lr, y_off + j * Wr, z_off + k * Hr, Lr, Wr, Hr))
+
+    # Extras (side/corner packs) — same offset applied
+    extras = master.get("extras") or []
+    for ex in extras:
+        ex_off  = ex.get("offset",    [0, 0, 0])
+        ex_ir   = ex.get("inner_rot", [1, 1, 1])
+        ex_grid = ex.get("grid",      [1, 1, 1])
+        eL, eW, eH = float(ex_ir[0]), float(ex_ir[1]), float(ex_ir[2])
+        for i2 in range(int(ex_grid[0])):
+            for j2 in range(int(ex_grid[1])):
+                for k2 in range(int(ex_grid[2])):
+                    inner_rects.append((
+                        x_off + ex_off[0] + i2 * eL,
+                        y_off + ex_off[1] + j2 * eW,
+                        z_off + ex_off[2] + k2 * eH,
+                        eL, eW, eH,
+                    ))
+
+    if inner_rects:
+        traces.append(_batch_box_meshes(inner_rects, "Caja interior", opacity=0.35, color="#4da3ff"))
+        traces.append(_batch_box_edges (inner_rects, "Caja interior", width=3, color="#1a73e8"))
+
+    # ── Articles (yellow) inside the first inner box ────────────────────────
+    article = doc.get("article_dims") or {}
+    a_dims_raw = [
+        article.get("length_cm", 0),
+        article.get("width_cm",  0),
+        article.get("height_cm", 0),
+    ]
+    if all(d > 0 for d in a_dims_raw):
+        wall_cm = float(inner_box.get("wall_thickness_mm", 3)) / 10.0
+
+        a_sorted = sorted(a_dims_raw, reverse=True)   # [a_max, a_med, a_min]
+        art_grid = inner_box.get("grid") or [1, 1, 1]  # [n_max, n_med, n_min] in inner sorted-dim space
+
+        # article_axes_per_inner_axis[i] = which article sorted-dim ("max"/"med"/"min")
+        # is oriented along inner sorted-dim rank i.  This is stored by inner_calculator
+        # and is the authoritative source for which article size maps to which inner axis.
+        art_axes = inner_box.get("article_axes_per_inner_axis") or ["max", "med", "min"]
+        _ax_rank = {"max": 0, "med": 1, "min": 2}
+
+        # For each inner sorted-dim rank i: what is the article dimension in that direction?
+        #   - count  = art_grid[i]
+        #   - size   = a_sorted[ _ax_rank[art_axes[i]] ]
+        inner_rank_count = [int(art_grid[i]) for i in range(3)]
+        inner_rank_size  = [float(a_sorted[_ax_rank[art_axes[i]]]) for i in range(3)]
+
+        # Now map inner sorted ranks → render axes using render_to_rank.
+        # render_to_rank[r] = inner sorted rank carried by render axis r.
+        ir_vals = [Lr, Wr, Hr]
+        render_to_rank = [0, 0, 0]
+        for rank, idx in enumerate(sorted(range(3), key=lambda i: -ir_vals[i])):
+            render_to_rank[idx] = rank
+
+        nAL = inner_rank_count[render_to_rank[0]]; aL = inner_rank_size[render_to_rank[0]]
+        nAW = inner_rank_count[render_to_rank[1]]; aW = inner_rank_size[render_to_rank[1]]
+        nAH = inner_rank_count[render_to_rank[2]]; aH = inner_rank_size[render_to_rank[2]]
+
+        art_rects: list = []
+        for ai in range(nAL):
+            for aj in range(nAW):
+                for ak in range(nAH):
+                    art_rects.append((
+                        x_off + wall_cm + ai * aL,
+                        y_off + wall_cm + aj * aW,
+                        z_off + wall_cm + ak * aH,
+                        aL, aW, aH,
+                    ))
+        if art_rects:
+            traces.append(_batch_box_meshes(art_rects, "Artículo", opacity=0.35, color="#f5c518"))
+            traces.append(_batch_box_edges (art_rects, "Artículo", width=3,      color="#c8a000"))
+
+    # ── Dimension annotations (cotas L / W / H) ─────────────────────────────────────
+    traces += _dim_annotations_3d(bL, bW, bH)
+
+    # ── Layout ─────────────────────────────────────────────────────────────────
+    pad      = max(bL, bW, bH) * 0.28
+    gap      = max(bL, bW, bH) * 0.08  # same gap used by annotations
+    tape_ext = 0.10 + 0.05 + 2.0
+    edge_side = 0.25
+    _axis_clean = dict(
+        title="", showgrid=False, zeroline=False,
+        showticklabels=False, showaxeslabels=False,
+        showbackground=False, showline=False, showspikes=False,
+    )
+    fig = go.Figure(data=traces)
+
+    annotations = []
+
+    fig.update_layout(
+        title=None,
+        paper_bgcolor="white",
+        plot_bgcolor="white",
+        autosize=True,
+        margin=dict(l=0, r=0, t=0, b=0),
+        annotations=annotations,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom", y=1.01,
+            xanchor="right",  x=1,
+            font=dict(family="'Inter', Arial, sans-serif", size=12),
+        ),
+        scene=dict(
+            camera=dict(
+                eye=dict(x=1.6, y=1.2, z=1.1),
+                center=dict(x=0, y=0, z=-0.05),
+                up=dict(x=0, y=0, z=1),
+            ),
+            xaxis=dict(**_axis_clean, range=[-(edge_side + pad * 0.1), bL + gap * 2.8]),
+            yaxis=dict(**_axis_clean, range=[-(gap * 0.7), bW + gap * 2.5]),
+            zaxis=dict(**_axis_clean, range=[-(gap * 0.7), bH + tape_ext + pad * 0.2]),
+            aspectmode="data",
+            bgcolor="rgba(0,0,0,0)",
+        ),
+    )
+    return fig
+
+
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
 def _figure_to_html(fig: go.Figure) -> str:
@@ -559,3 +924,19 @@ def render_container(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Container not found")
     doc.pop("_id", None)
     return HTMLResponse(content=_figure_to_html(_build_container_figure(doc)))
+
+
+@router.get("/proposal/{proposal_id}", response_class=HTMLResponse)
+def render_proposal(
+    proposal_id: str,
+    current_user: TokenData = Depends(require_auth),
+):
+    """
+    Returns a self-contained HTML page with a Plotly 3-D render of the proposal:
+    master container + inner box grid (blue) + one article (yellow) in the first inner.
+    """
+    doc = proposals_collection.find_one({"id": proposal_id})
+    if not doc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Proposal not found")
+    doc.pop("_id", None)
+    return HTMLResponse(content=_figure_to_html(_build_proposal_figure(doc)))

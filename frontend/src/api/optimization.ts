@@ -204,3 +204,130 @@ export async function listProposals(token: string, productId?: string): Promise<
   if (!res.ok) throw new Error('Error fetching proposals');
   return res.json();
 }
+
+export interface ProposalCreateBody {
+  product_id: string;
+  size_id: string;
+  article_dims: { length_cm: number; width_cm: number; height_cm: number; weight_kg: number };
+  lot_size: number;
+  inner_wall_thickness_mm: number;
+}
+
+export interface ProposalResult {
+  id: string;
+  product_id: string;
+  size_id: string;
+  article_dims: { length_cm: number; width_cm: number; height_cm: number; weight_kg: number } | null;
+  lot_size: number;
+  status: string;
+  created_at: string;
+  render_html: string | null;
+  inner_box: {
+    ext_max_cm: number; ext_med_cm: number; ext_min_cm: number;
+    int_max_cm: number; int_med_cm: number; int_min_cm: number;
+    total_weight_kg: number;
+    wall_thickness_mm: number;
+    grid: number[];
+  } | null;
+  selected_master: {
+    container_id: string;
+    container_name: string;
+    container_priority: number | null;
+    inners_used: number;
+    fill_pct: number;
+    air_pct: number;
+    total_weight_kg: number;
+    accepted: boolean;
+    ext_dims: number[];
+    util_dims: number[];
+    grid: number[];
+    inner_dims_rotated: number[];
+  } | null;
+  all_evaluated: Array<{
+    container_name: string;
+    fill_pct: number;
+    air_pct: number;
+    inners_used: number;
+    accepted: boolean;
+  }> | null;
+  pdf_b64: string | null;
+}
+
+export async function submitProposal(token: string, body: ProposalCreateBody): Promise<ProposalResult> {
+  const res = await safeFetch(`${BASE}/proposals/optimize`, {
+    method: 'POST',
+    headers: authHeader(token),
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const detail = await res.json().then((j: { detail?: string }) => j.detail).catch(() => null);
+    throw new Error(detail ?? 'Error generating proposal');
+  }
+  return res.json();
+}
+
+export async function getProposalById(token: string, id: string): Promise<ProposalResult> {
+  const res = await safeFetch(`${BASE}/proposals/${id}`, { headers: authHeader(token) });
+  if (!res.ok) throw new Error('Error fetching proposal');
+  return res.json();
+}
+
+export async function fetchProposalRenderHtml(token: string, id: string): Promise<string> {
+  const res = await safeFetch(`${BASE}/renders/proposal/${id}`, { headers: authHeader(token) });
+  if (!res.ok) throw new Error('proposal render failed');
+  return res.text();
+}
+
+export async function recalculateProposal(token: string, id: string, body: ProposalCreateBody): Promise<ProposalResult> {
+  const res = await safeFetch(`${BASE}/proposals/${id}/recalculate`, {
+    method: 'PUT',
+    headers: authHeader(token),
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const detail = await res.json().then((j: { detail?: string }) => j.detail).catch(() => null);
+    throw new Error(detail ?? 'Error recalculating proposal');
+  }
+  return res.json();
+}
+
+/** Fetch full proposals (including inner_box, selected_master, etc.) for a product. */
+export async function fetchProductProposals(token: string, productId: string): Promise<ProposalResult[]> {
+  const res = await safeFetch(`${BASE}/proposals/?product_id=${encodeURIComponent(productId)}`, {
+    headers: authHeader(token),
+  });
+  if (!res.ok) throw new Error('Error fetching proposals');
+  return res.json();
+}
+
+/** Run the optimization pipeline without saving to the database. */
+export async function calculateProposal(token: string, body: ProposalCreateBody): Promise<ProposalResult> {
+  const res = await safeFetch(`${BASE}/proposals/calculate`, {
+    method: 'POST',
+    headers: authHeader(token),
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const detail = await res.json().then((j: { detail?: string }) => j.detail).catch(() => null);
+    throw new Error(detail ?? 'Error calculating proposal');
+  }
+  return res.json();
+}
+
+export async function updateProposalStatus(
+  token: string,
+  id: string,
+  proposalStatus: 'accepted' | 'rejected' | 'pending',
+  rejectionReason?: string,
+): Promise<ProposalResult> {
+  const res = await safeFetch(`${BASE}/proposals/${id}/status`, {
+    method: 'PATCH',
+    headers: authHeader(token),
+    body: JSON.stringify({ status: proposalStatus, rejection_reason: rejectionReason ?? null }),
+  });
+  if (!res.ok) {
+    const detail = await res.json().then((j: { detail?: string }) => j.detail).catch(() => null);
+    throw new Error(detail ?? 'Error updating proposal status');
+  }
+  return res.json();
+}

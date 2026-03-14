@@ -6,6 +6,8 @@ import ContainersPage from './pages/containers/ContainersPage';
 import RulesPage from './pages/rules/RulesPage';
 import ResetPasswordPage from './pages/reset-password/ResetPasswordPage';
 import ManufacturerPage from './pages/manufacturer/ManufacturerPage';
+import ProposalPage from './pages/proposals/ProposalPage';
+import ProposalResultPage from './pages/proposals/ProposalResultPage';
 import { useAuthStore } from './store/auth';
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -41,6 +43,8 @@ const AppRouter: React.FC = () => (
       <Route path="/containers"   element={<PrivateRoute><ContainersPage /></PrivateRoute>} />
       <Route path="/rules"        element={<PrivateRoute><RulesPage /></PrivateRoute>} />
       <Route path="/manufacturer" element={<PrivateRoute><ManufacturerPage /></PrivateRoute>} />
+      <Route path="/proposals"        element={<PrivateRoute><ProposalPage /></PrivateRoute>} />
+      <Route path="/proposals/result"  element={<PrivateRoute><ProposalResultPage /></PrivateRoute>} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="*" element={<SmartRedirect />} />
     </Routes>
