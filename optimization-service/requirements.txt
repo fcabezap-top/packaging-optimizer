@@ -4,3 +4,6 @@ requests
 python-jose[cryptography]
 pymongo
 plotly
+reportlab
+matplotlib
+Pillow

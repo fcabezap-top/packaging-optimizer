@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import AppShell from '../../components/layout/AppShell';
 import { useAuthStore } from '../../store/auth';
 import { fetchMyProducts, type ProductDetail } from '../../api/product';
@@ -30,26 +31,27 @@ function getImageUrl(product: ProductDetail): string {
 
 // ── Status badge ─────────────────────────────────────────────────────────
 const STATUS_LABEL: Record<string, string> = {
-  pending:  'Pendiente',
-  proposed: 'Propuesto',
-  accepted: 'Aceptado',
-  rejected: 'Rechazado',
+  no_proposal: 'Sin propuesta',
+  proposed:    'Propuesto',
+  accepted:    'Aceptado',
+  rejected:    'Rechazado',
 };
 
 // ── Product card ──────────────────────────────────────────────────────────
 interface CardProps {
   product: ProductDetail;
   status: string;
+  onClick: () => void;
 }
 
-const ProductCard: React.FC<CardProps> = ({ product, status }) => {
+const ProductCard: React.FC<CardProps> = ({ product, status, onClick }) => {
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
   const meta = getFamilyMeta(product.family.name);
   const imageUrl = getImageUrl(product);
 
   return (
-    <div className="mfr__card">
+    <div className="mfr__card" onClick={onClick} style={{ cursor: 'pointer' }}>
       <div className="mfr__card-image" style={{ '--accent': meta.accent } as React.CSSProperties}>
         {!imgLoaded && !imgError && (
           <div className="mfr__card-placeholder">
@@ -97,6 +99,7 @@ const ProductCard: React.FC<CardProps> = ({ product, status }) => {
 // ── Main Page ─────────────────────────────────────────────────────────────
 const ManufacturerPage: React.FC = () => {
   const token = useAuthStore((s) => s.token)!;
+  const navigate = useNavigate();
   const [products, setProducts] = useState<ProductDetail[]>([]);
   const [proposals, setProposals] = useState<ProposalSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -110,10 +113,10 @@ const ManufacturerPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('');
 
   const STATUS_OPTIONS = [
-    { id: 'pending',  name: 'Pendiente' },
-    { id: 'proposed', name: 'Propuesto' },
-    { id: 'accepted', name: 'Aceptado' },
-    { id: 'rejected', name: 'Rechazado' },
+    { id: 'no_proposal', name: 'Sin propuesta' },
+    { id: 'proposed',    name: 'Propuesto' },
+    { id: 'accepted',    name: 'Aceptado' },
+    { id: 'rejected',    name: 'Rechazado' },
   ];
 
   useEffect(() => {
@@ -136,10 +139,11 @@ const ManufacturerPage: React.FC = () => {
 
   const getStatus = (productId: string): string => {
     const props = proposalsByProduct[productId] ?? [];
-    if (props.length === 0) return 'pending';
+    if (props.length === 0) return 'no_proposal';           // never submitted
     if (props.some((p) => p.status === 'accepted')) return 'accepted';
-    if (props.some((p) => p.status === 'pending')) return 'pending';
-    return 'rejected';
+    if (props.some((p) => p.status === 'rejected') &&
+        props.every((p) => p.status === 'rejected')) return 'rejected';
+    return 'proposed';                                       // has proposal(s), pending review
   };
 
   const handleFamilyChange = (val: string) => {
@@ -180,8 +184,8 @@ const ManufacturerPage: React.FC = () => {
     });
   }, [products, proposalsByProduct, search, familyFilter, subfamilyFilter, campaignFilter, statusFilter]);
 
-  const pending = filtered.filter((p) => getStatus(p.id) === 'pending');
-  const optimized = filtered.filter((p) => getStatus(p.id) !== 'pending');
+  const pending = filtered.filter((p) => getStatus(p.id) === 'no_proposal');
+  const optimized = filtered.filter((p) => getStatus(p.id) !== 'no_proposal');
 
   return (
     <AppShell>
@@ -252,7 +256,7 @@ const ManufacturerPage: React.FC = () => {
               ) : (
                 <div className="mfr__grid">
                   {pending.map((p) => (
-                    <ProductCard key={p.id} product={p} status={getStatus(p.id)} />
+                    <ProductCard key={p.id} product={p} status={getStatus(p.id)} onClick={() => navigate(`/proposals?product_id=${p.id}`)} />
                   ))}
                 </div>
               )}
@@ -271,7 +275,7 @@ const ManufacturerPage: React.FC = () => {
               ) : (
                 <div className="mfr__grid">
                   {optimized.map((p) => (
-                    <ProductCard key={p.id} product={p} status={getStatus(p.id)} />
+                    <ProductCard key={p.id} product={p} status={getStatus(p.id)} onClick={() => navigate('/proposals/result', { state: { productId: p.id, productName: p.name } })} />
                   ))}
                 </div>
               )}

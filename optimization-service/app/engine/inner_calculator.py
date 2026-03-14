@@ -71,12 +71,20 @@ def compute_inner_box(
     weight_kg: float,
     lot_size: int,
     wall_thickness_mm: float = 3.0,
+    constraints: Optional[dict] = None,
 ) -> Optional[InnerBoxCalc]:
     """
     Compute the most compact inner box that holds exactly `lot_size` articles.
 
     Returns an InnerBoxCalc with sides sorted descending, or None if
     lot_size < 1 (should not happen given model validation).
+
+    constraints (optional):
+      orientation_locked: bool   - if True, restrict how the article sits in the inner box
+      locked_axis: str|None      - "height"→article max dim must be on H slot
+                                   "width" →article min dim must be on H slot (lying flat)
+                                   "length"→article med dim on H slot
+                                   None   → only natural orientation (max→L, med→W, min→H)
     """
     if lot_size < 1:
         return None
@@ -85,6 +93,26 @@ def compute_inner_box(
     d_sorted = sorted([length_cm, width_cm, height_cm], reverse=True)
     ax_names = ["max", "med", "min"]
 
+    # Build set of allowed article orientations based on constraints.
+    # The tuple (perm[0], perm[1], perm[2]) maps d_sorted axes to (L, W, H) slots.
+    # locked_axis refers to the H slot (index 1 in (nL,nW,nH) triple of the grid,
+    # but H of the article orientation is perm[2]):
+    #   "height" -> article max dim (index 0) must be in H slot -> perm[2] == 0
+    #   "width"  -> article min dim (index 2) must be in H slot -> perm[2] == 2
+    #   "length" -> article med dim (index 1) must be in H slot -> perm[2] == 1
+    #   None     -> lock to natural (0,1,2) only
+    allowed_art_perms: Optional[set] = None
+    if constraints and constraints.get("orientation_locked"):
+        locked_axis = constraints.get("locked_axis")
+        if locked_axis == "height":
+            allowed_art_perms = {p for p in permutations(range(3)) if p[2] == 0}
+        elif locked_axis == "width":
+            allowed_art_perms = {p for p in permutations(range(3)) if p[2] == 2}
+        elif locked_axis == "length":
+            allowed_art_perms = {p for p in permutations(range(3)) if p[2] == 1}
+        else:
+            allowed_art_perms = {(0, 1, 2)}
+
     best_result: Optional[InnerBoxCalc] = None
     best_score: Optional[tuple] = None
 
@@ -92,6 +120,8 @@ def compute_inner_box(
 
     # 2) Try all 6 article orientations
     for perm in permutations(range(3)):
+        if allowed_art_perms is not None and perm not in allowed_art_perms:
+            continue
         Lr = d_sorted[perm[0]]
         Wr = d_sorted[perm[1]]
         Hr = d_sorted[perm[2]]

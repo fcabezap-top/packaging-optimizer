@@ -91,6 +91,7 @@ def _evaluate_container(
     container: dict,
     inner_ext: Tuple[float, float, float],
     inner_weight_kg: float,
+    constraints: Optional[dict] = None,
 ) -> Optional[MasterResult]:
     """
     Find the best grid (nL × nH × nW) of inner boxes that fits in this container.
@@ -98,6 +99,11 @@ def _evaluate_container(
 
     container dims_cm are EXTERIOR ranges.
     Usable interior per axis = dim - 2×wall_cm - 2×margin.
+
+    constraints (optional):
+      orientation_locked: bool   — if True, only allow orientations compatible with locked_axis
+      locked_axis: str|None      — "height"→tallest dim vertical, "width"→flattest flat, "length"→length horiz
+      max_stack_layers: int|None — cap nH (vertical axis)
     """
     wall_cm   = container["wall_thickness_mm"] / 10.0
     margin_l  = container["inner_margin_cm"]["length"]
@@ -114,6 +120,24 @@ def _evaluate_container(
 
     max_kg = container["max_weight_kg"]
 
+    # ── Orientation filtering from rule constraints ────────────────────────
+    # The render maps master-W → render-Z (vertical up), master-H → render-Y (depth).
+    # So for articles to appear standing upright in the render, the inner-box axis
+    # holding the article's locked dim must be placed along master W (p[2] = axW).
+    # `required_inner_h_axis` carries the inner sorted-axis label ("max"/"med"/"min")
+    # that holds the article's locked direction (computed in proposals.py).
+    allowed_perms: Optional[set] = None
+    if constraints and constraints.get("orientation_locked"):
+        required_w = constraints.get("required_inner_h_axis")  # key reused, meaning = required axW
+        if required_w:
+            allowed_perms = {p for p in permutations(range(3))
+                             if ["max", "med", "min"][p[2]] == required_w}
+        else:
+            # orientation_locked but axis not resolved — natural placement
+            allowed_perms = {(0, 1, 2)}
+
+    max_stack = constraints.get("max_stack_layers") if constraints else None
+
     # inner_ext is already sorted descending (max ≥ med ≥ min)
     dim_map   = {"max": inner_ext[0], "med": inner_ext[1], "min": inner_ext[2]}
     ax_labels = ["max", "med", "min"]
@@ -121,6 +145,9 @@ def _evaluate_container(
     best: Optional[dict] = None
 
     for perm in permutations(range(3)):
+        if allowed_perms is not None and perm not in allowed_perms:
+            continue
+
         axL, axH, axW = ax_labels[perm[0]], ax_labels[perm[1]], ax_labels[perm[2]]
         Lr = dim_map[axL]
         Hr = dim_map[axH]
@@ -132,6 +159,10 @@ def _evaluate_container(
         max_nL = int(math.floor(UL_max / Lr))
         max_nH = int(math.floor(UH_max / Hr))
         max_nW = int(math.floor(UW_max / Wr))
+
+        # Apply max_stack_layers rule: cap the W axis (= render vertical / up direction)
+        if max_stack is not None:
+            max_nW = min(max_nW, max_stack)
 
         if max_nL == 0 or max_nH == 0 or max_nW == 0:
             continue
@@ -278,6 +309,7 @@ def _evaluate_container(
         total_weight_kg=round(inners_used_final * inner_weight_kg, 4),
         accepted=False,  # determined by the pipeline selector below
         extras=extras if extras else None,
+        container_priority=container.get("priority"),
     )
 
 
@@ -289,6 +321,7 @@ def run_master_pipeline(
     inner_ext: Tuple[float, float, float],
     inner_weight_kg: float,
     containers: List[dict],
+    constraints: Optional[dict] = None,
 ) -> Tuple[Optional[MasterResult], List[MasterResult]]:
     """
     Evaluate all active containers in priority order and select the best proposal.
@@ -306,7 +339,7 @@ def run_master_pipeline(
     selected: Optional[MasterResult] = None
 
     for container in containers:
-        result = _evaluate_container(container, inner_ext, inner_weight_kg)
+        result = _evaluate_container(container, inner_ext, inner_weight_kg, constraints)
         if result is None:
             continue  # inner box doesn't physically fit in this container
 

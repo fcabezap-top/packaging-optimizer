@@ -14,6 +14,7 @@ const TABS: Tab[] = [
   { label: 'Contenedores', path: '/containers',   roles: ['reviewer', 'admin'] },
   { label: 'Reglas',       path: '/rules',        roles: ['reviewer', 'admin'] },
   { label: 'Producto',     path: '/manufacturer', roles: ['manufacturer'] },
+  { label: 'Propuestas',   path: '/proposals',    roles: ['manufacturer'] },
 ];
 
 interface AppShellProps {
@@ -45,15 +46,22 @@ const AppShell: React.FC<AppShellProps> = ({ children, fullWidth }) => {
       </header>
 
       <div className="shell__tabs">
-        {visibleTabs.map((tab) => (
-          <button
-            key={tab.path}
-            className={`shell__tab${location.pathname.startsWith(tab.path) ? ' shell__tab--active' : ''}`}
-            onClick={() => navigate(tab.path)}
-          >
-            {tab.label}
-          </button>
-        ))}
+        {visibleTabs.map((tab) => {
+          const isActive = location.pathname.startsWith(tab.path);
+          // Propuestas tab: informative only — no direct navigation
+          const isDisabled = tab.path === '/proposals' && !isActive;
+          return (
+            <button
+              key={tab.path}
+              className={`shell__tab${isActive ? ' shell__tab--active' : ''}${isDisabled ? ' shell__tab--disabled' : ''}`}
+              onClick={isDisabled ? undefined : () => navigate(tab.path)}
+              disabled={isDisabled}
+              title={isDisabled ? 'Accede desde un producto' : undefined}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
       <main className={`shell__content${(role === 'manufacturer' || fullWidth) ? ' shell__content--full' : ''}`}>

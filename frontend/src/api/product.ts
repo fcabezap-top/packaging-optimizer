@@ -64,3 +64,9 @@ export async function fetchMyProducts(token: string): Promise<ProductDetail[]> {
   return res.json();
 }
 
+export async function fetchProduct(token: string, id: string): Promise<ProductDetail> {
+  const res = await safeFetch(`${BASE}/products/${id}`, { headers: authHeader(token) });
+  if (!res.ok) throw new Error((await res.json()).detail ?? 'Product not found');
+  return res.json();
+}
+

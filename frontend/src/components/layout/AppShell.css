@@ -105,6 +105,12 @@
   border-bottom-color: var(--color-content-1);
 }
 
+.shell__tab--disabled {
+  opacity: 0.35;
+  cursor: default !important;
+  pointer-events: none;
+}
+
 /* ── Page header (título de sección) ─────────────────────────────────── */
 .pageHeader {
   display: flex;

@@ -133,10 +133,11 @@
   padding: 2px var(--size-2);
   border-radius: 2px;
 }
+.mfr__status-badge--no_proposal { background: var(--color-bg); color: var(--color-content-1); border: 1px solid var(--color-border-strong); }
 .mfr__status-badge--pending  { background: var(--color-bg); color: var(--color-content-1); border: 1px solid var(--color-border-strong); }
-.mfr__status-badge--proposed { background: var(--color-bg); color: #2563eb;               border: 1px solid var(--color-border-strong); }
-.mfr__status-badge--accepted { background: var(--color-bg); color: #16a34a;               border: 1px solid var(--color-border-strong); }
-.mfr__status-badge--rejected { background: var(--color-bg); color: #dc2626;               border: 1px solid var(--color-border-strong); }
+.mfr__status-badge--proposed { background: var(--color-bg); color: #2563eb;  border: 1px solid var(--color-border-strong); }
+.mfr__status-badge--accepted { background: var(--color-bg); color: #16a34a;  border: 1px solid var(--color-border-strong); }
+.mfr__status-badge--rejected { background: var(--color-bg); color: #dc2626;  border: 1px solid var(--color-border-strong); }
 
 /* Card body */
 .mfr__card-body {
