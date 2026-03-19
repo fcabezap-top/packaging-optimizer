@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import AppShell from '../../components/layout/AppShell';
 import { useAuthStore } from '../../store/auth';
 import { fetchAllProducts, type ProductDetail } from '../../api/product';
@@ -43,14 +44,21 @@ const STATUS_OPTIONS = [
 ];
 
 // ── Product card ──────────────────────────────────────────────────────────
-const ProductCard: React.FC<{ product: ProductDetail; status: string }> = ({ product, status }) => {
+const ProductCard: React.FC<{ product: ProductDetail; status: string; onClick?: () => void }> = ({ product, status, onClick }) => {
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
   const meta = getFamilyMeta(product.family?.name ?? '');
   const imageUrl = getImageUrl(product);
+  const isClickable = !!onClick;
 
   return (
-    <div className="mfr__card">
+    <div
+      className={`mfr__card${isClickable ? ' mfr__card--clickable' : ''}`}
+      onClick={onClick}
+      role={isClickable ? 'button' : undefined}
+      tabIndex={isClickable ? 0 : undefined}
+      onKeyDown={isClickable ? (e) => { if (e.key === 'Enter') onClick?.(); } : undefined}
+    >
       <div className="mfr__card-image" style={{ '--accent': meta.accent } as React.CSSProperties}>
         {!imgLoaded && !imgError && (
           <div className="mfr__card-placeholder">
@@ -96,6 +104,7 @@ const ProductCard: React.FC<{ product: ProductDetail; status: string }> = ({ pro
 // ── Main Page ─────────────────────────────────────────────────────────────
 const ProductPage: React.FC = () => {
   const token = useAuthStore((s) => s.token)!;
+  const navigate = useNavigate();
   const [products, setProducts] = useState<ProductDetail[]>([]);
   const [proposals, setProposals] = useState<ProposalSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -257,7 +266,7 @@ const ProductPage: React.FC = () => {
                   <p className="mfr__empty">Aún no hay propuestas de empaquetado.</p>
                 ) : (
                   <div className="mfr__grid">
-                    {optimized.map((p) => <ProductCard key={p.id} product={p} status={getStatus(p.id)} />)}
+                    {optimized.map((p) => <ProductCard key={p.id} product={p} status={getStatus(p.id)} onClick={() => navigate(`/proposals/review`, { state: { productId: p.id, productName: p.name } })} />)}
                   </div>
                 )}
               </section>
