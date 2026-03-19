@@ -31,7 +31,12 @@ const AppShell: React.FC<AppShellProps> = ({ children, fullWidth }) => {
     (tab) => !tab.roles || (role && tab.roles.includes(role))
   );
 
-  const activeTab = visibleTabs.find((t) => location.pathname.startsWith(t.path));
+  // /proposals/review is a sub-page of the reviewer's Product tab
+  const effectivePath = location.pathname === '/proposals/review'
+    ? '/product'
+    : location.pathname;
+
+  const activeTab = visibleTabs.find((t) => effectivePath.startsWith(t.path));
   const sectionLabel = activeTab?.label ?? visibleTabs[0]?.label ?? '';
 
   return (
@@ -47,7 +52,7 @@ const AppShell: React.FC<AppShellProps> = ({ children, fullWidth }) => {
 
       <div className="shell__tabs">
         {visibleTabs.map((tab) => {
-          const isActive = location.pathname.startsWith(tab.path);
+          const isActive = effectivePath.startsWith(tab.path);
           // Propuestas tab: informative only — no direct navigation
           const isDisabled = tab.path === '/proposals' && !isActive;
           return (

@@ -89,6 +89,18 @@
   overflow: hidden;
 }
 
+.mfr__card--clickable {
+  cursor: pointer;
+}
+
+.mfr__card--clickable:hover .mfr__card-img {
+  opacity: 0.85 !important;
+}
+
+.mfr__card--clickable:hover .mfr__card-name {
+  text-decoration: underline;
+}
+
 /* Image area */
 .mfr__card-image {
   position: relative;

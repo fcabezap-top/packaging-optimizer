@@ -9,6 +9,8 @@ import {
   updateProposalStatus,
 } from '../../api/optimization';
 import { fetchProduct, type ProductSize } from '../../api/product';
+import pdfIcon from '../../assets/pdf-file.png';
+import '../containers/containers.css';
 import './proposals.css';
 
 type SizeRow = { length: string; width: string; height: string; weight: string; lotSize: string };
@@ -47,6 +49,8 @@ const ProposalResultPage: React.FC = () => {
   const [actionError, setActionError] = useState('');
   const [pdfLoading, setPdfLoading] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
+  const [showAcceptModal, setShowAcceptModal] = useState(false);
+  const [pdfDownloaded, setPdfDownloaded] = useState(false);
 
   // Initial data load when navigating from product list (no results in state)
   useEffect(() => {
@@ -202,35 +206,28 @@ const ProposalResultPage: React.FC = () => {
           <p style={{ color: '#dc2626' }}>{initialError}</p>
         </div>
       ) : (
-      <div className="prop__page">
+      <div className="prop__page" style={{ gap: 'var(--size-1)' }}>
 
         {/* ── Title row ───────────────────────────────────────────────────── */}
-        <div className="prop__titleRow">
-          <div className="prop__titleGroup">
-            <div className="prop__titleLeft">
-              <div className="prop__titleLeft-row">
-                <h2 className="prop__title">PROPUESTA DE EMBALAJE</h2>
-              </div>
-              {productName && (
-                <p className="prop__subtitle">{productName.toUpperCase()}</p>
-              )}
-              {proposal?.selected_master?.container_priority != null && !noMatch && (
-                <p className="prop__subtitle" style={{ color: 'var(--color-content-1)' }}>PRIORIDAD {proposal.selected_master.container_priority}</p>
-              )}
-            </div>
-            {(isAccepted || isRejected) && (
-              <div className="prop__titleStatus">
-                <span className="prop__titleStatus-label" style={{ color: isAccepted ? '#16a34a' : '#dc2626' }}>
+        <div className="prop__titleRow" style={{ paddingBottom: 0 }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--size-4)' }}>
+              <h2 className="containerDetail__name">{productName.toUpperCase()}</h2>
+              {(isAccepted || isRejected) && (
+                <span style={{ fontSize: 'var(--font-size-s)', fontWeight: 700, letterSpacing: '0.05em', color: isAccepted ? '#16a34a' : '#dc2626' }}>
                   {isAccepted ? 'ACEPTADO' : 'RECHAZADO'}
                 </span>
-              </div>
-            )}
+              )}
+            </div>
+            <p className="containerDetail__desc">
+              {'Propuesta de embalaje'}
+              {proposal?.selected_master?.container_priority != null && !noMatch
+                ? ` · Prioridad ${proposal.selected_master.container_priority}`
+                : ''}
+            </p>
           </div>
 
-          {/* ── Status badge (accepted / rejected) ──────────────────── */}
-          {(isAccepted || isRejected) && (<></>)}
-
-          <div className="prop__titleActions">
+          <div className="prop__titleActions" style={{ alignSelf: 'flex-start' }}>
             {!isRejected && !isAccepted && (
               <button
                 className="btn btn--ghost btn--sm"
@@ -282,10 +279,10 @@ const ProposalResultPage: React.FC = () => {
                 </button>
                 <button
                   className="btn btn--sm"
-                  onClick={handleAccept}
+                  onClick={() => { setPdfDownloaded(false); setShowAcceptModal(true); }}
                   disabled={actionLoading || proposalIds.length === 0 || anyNoMatch}
                 >
-                  {actionLoading ? 'Guardando...' : 'Aceptar'}
+                  Aceptar
                 </button>
               </>
             )}
@@ -321,82 +318,56 @@ const ProposalResultPage: React.FC = () => {
                 {m ? (
                   <>
                     <div className="prop__rv-section">
-                      <p className="prop__rv-section-title">Master box</p>
-                      <div className="prop__rv-row">
-                        <span className="prop__rv-label">Contenedor</span>
-                        {!noMatch && <span className="prop__rv-value">{m.container_name}</span>}
-                      </div>
-                      <div className="prop__rv-row">
-                        <span className="prop__rv-label">Exterior</span>
-                        {!noMatch && <span className="prop__rv-value">
-                          {m.ext_dims?.[0]?.toFixed(1)} &times; {m.ext_dims?.[1]?.toFixed(1)} &times; {m.ext_dims?.[2]?.toFixed(1)} cm
-                        </span>}
-                      </div>
-                      <div className="prop__rv-row">
-                        <span className="prop__rv-label">Utilizable</span>
-                        {!noMatch && <span className="prop__rv-value">
-                          {m.util_dims?.[0]?.toFixed(1)} &times; {m.util_dims?.[1]?.toFixed(1)} &times; {m.util_dims?.[2]?.toFixed(1)} cm
-                        </span>}
-                      </div>
-                      <div className="prop__rv-row">
-                        <span className="prop__rv-label">Grid inners</span>
-                        {!noMatch && <span className="prop__rv-value">
-                          {m.grid?.[0]} &times; {m.grid?.[1]} &times; {m.grid?.[2]}
-                        </span>}
+                      <p className="prop__rv-section-title">Contenedor</p>
+                      <div className="containerDetail__dims">
+                        {!noMatch && <span className="containerDetail__dim">{m.container_name}</span>}
+                        {m.container_priority != null && !noMatch && (
+                          <span className="containerDetail__dim">Prioridad {m.container_priority}</span>
+                        )}
+                        {m.ext_dims && !noMatch && (
+                          <span className="containerDetail__dim">
+                            Exterior {m.ext_dims[0]?.toFixed(1)} × {m.ext_dims[1]?.toFixed(1)} × {m.ext_dims[2]?.toFixed(1)} cm
+                          </span>
+                        )}
+                        {m.util_dims && !noMatch && (
+                          <span className="containerDetail__dim">
+                            Utilizable {m.util_dims[0]?.toFixed(1)} × {m.util_dims[1]?.toFixed(1)} × {m.util_dims[2]?.toFixed(1)} cm
+                          </span>
+                        )}
+                        {m.grid && !noMatch && (
+                          <span className="containerDetail__dim">
+                            Grid {m.grid[0]} × {m.grid[1]} × {m.grid[2]}
+                          </span>
+                        )}
                       </div>
                     </div>
 
                     <div className="prop__rv-section">
-                      <p className="prop__rv-section-title">Inner box</p>
-                      {ib && (
-                        <>
-                          <div className="prop__rv-row">
-                            <span className="prop__rv-label">Exterior</span>
-                            {!noMatch && <span className="prop__rv-value">
-                              {ib.ext_max_cm.toFixed(1)} &times; {ib.ext_med_cm.toFixed(1)} &times; {ib.ext_min_cm.toFixed(1)} cm
-                            </span>}
-                          </div>
-                          <div className="prop__rv-row">
-                            <span className="prop__rv-label">Interior</span>
-                            {!noMatch && <span className="prop__rv-value">
-                              {ib.int_max_cm.toFixed(1)} &times; {ib.int_med_cm.toFixed(1)} &times; {ib.int_min_cm.toFixed(1)} cm
-                            </span>}
-                          </div>
-                          <div className="prop__rv-row">
-                            <span className="prop__rv-label">Pared cartón</span>
-                            {!noMatch && <span className="prop__rv-value">{ib.wall_thickness_mm} mm</span>}
-                          </div>
-                        </>
-                      )}
-                      <div className="prop__rv-row">
-                        <span className="prop__rv-label">Uds. por inner</span>
-                        {!noMatch && <span className="prop__rv-value">{proposal?.lot_size}</span>}
-                      </div>
-                      <div className="prop__rv-row">
-                        <span className="prop__rv-label">Inners por master</span>
-                        {!noMatch && <span className="prop__rv-value">{m.inners_used}</span>}
-                      </div>
-                      <div className="prop__rv-row">
-                        <span className="prop__rv-label">Total artículos</span>
-                        {!noMatch && <span className="prop__rv-value prop__rv-value--accent">
-                          {m.inners_used * (proposal?.lot_size ?? 0)}
-                        </span>}
+                      <p className="prop__rv-section-title">Caja interior</p>
+                      <div className="containerDetail__dims">
+                        {ib && !noMatch && (
+                          <>
+                            <span className="containerDetail__dim">
+                              Inner ext. {ib.ext_max_cm.toFixed(1)} × {ib.ext_med_cm.toFixed(1)} × {ib.ext_min_cm.toFixed(1)} cm
+                            </span>
+                            <span className="containerDetail__dim">
+                              Inner int. {ib.int_max_cm.toFixed(1)} × {ib.int_med_cm.toFixed(1)} × {ib.int_min_cm.toFixed(1)} cm
+                            </span>
+                            <span className="containerDetail__dim">Pared {ib.wall_thickness_mm} mm</span>
+                          </>
+                        )}
+                        {!noMatch && <span className="containerDetail__dim">Uds./inner {proposal?.lot_size}</span>}
+                        {!noMatch && <span className="containerDetail__dim">Inners/master {m.inners_used}</span>}
                       </div>
                     </div>
 
                     <div className="prop__rv-section">
                       <p className="prop__rv-section-title">Métricas</p>
-                      <div className="prop__rv-row">
-                        <span className="prop__rv-label">Ocupación</span>
-                        {!noMatch && <span className="prop__rv-value prop__rv-value--accent">{m.fill_pct.toFixed(1)}%</span>}
-                      </div>
-                      <div className="prop__rv-row">
-                        <span className="prop__rv-label">Aire</span>
-                        {!noMatch && <span className="prop__rv-value">{m.air_pct.toFixed(1)}%</span>}
-                      </div>
-                      <div className="prop__rv-row">
-                        <span className="prop__rv-label">Peso total</span>
-                        {!noMatch && <span className="prop__rv-value">{m.total_weight_kg.toFixed(2)} kg</span>}
+                      <div className="containerDetail__dims">
+                        {!noMatch && <span className="containerDetail__dim">Total {m.inners_used * (proposal?.lot_size ?? 0)} artículos</span>}
+                        {!noMatch && <span className="containerDetail__dim">Ocupación {m.fill_pct.toFixed(1)}%</span>}
+                        {!noMatch && <span className="containerDetail__dim">Aire {m.air_pct.toFixed(1)}%</span>}
+                        {!noMatch && <span className="containerDetail__dim">Peso {m.total_weight_kg.toFixed(2)} kg</span>}
                       </div>
                     </div>
                   </>
@@ -447,15 +418,17 @@ const ProposalResultPage: React.FC = () => {
       </div>
     )}
 
-    {/* ── Reject confirmation modal ─────────────────────────────────────── */}
+    {/* ── Reject modal ──────────────────────────────────────────────────── */}
     {showRejectModal && (
-      <div className="confirmModal" onClick={() => setShowRejectModal(false)}>
-        <div className="confirmModal__dialog" onClick={(e) => e.stopPropagation()}>
-          <h3 className="confirmModal__title">Rechazar propuesta</h3>
-          <p className="confirmModal__body">
-            Esta acción es <strong>irreversible</strong>. Una vez rechazada, la propuesta no podrá ser modificada. Nuestro equipo técnico se pondrá en contacto con usted.
+      <div className="propModal" onClick={() => setShowRejectModal(false)}>
+        <div className="propModal__dialog" onClick={(e) => e.stopPropagation()}>
+          <h3 className="propModal__title">Rechazar propuesta</h3>
+          <p className="propModal__body">
+            Esta acción <strong>no se puede deshacer</strong>. Solo se debe utilizar el rechazo
+            cuando la propuesta no se adapte al producto por motivos excepcionales.
+            La incidencia se gestionará directamente con oficina técnica.
           </p>
-          <div className="confirmModal__actions">
+          <div className="propModal__actions">
             <button
               className="btn btn--ghost btn--sm"
               onClick={() => setShowRejectModal(false)}
@@ -469,6 +442,46 @@ const ProposalResultPage: React.FC = () => {
               disabled={actionLoading}
             >
               {actionLoading ? 'Rechazando...' : 'Confirmar rechazo'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* ── Accept modal ──────────────────────────────────────────────────── */}
+    {showAcceptModal && (
+      <div className="propModal" onClick={() => setShowAcceptModal(false)}>
+        <div className="propModal__dialog" onClick={(e) => e.stopPropagation()}>
+          <h3 className="propModal__title">Aceptar propuesta</h3>
+          <p className="propModal__body">
+            Esta acción <strong>no se puede deshacer</strong>. La aceptación de la propuesta
+            es <strong>vinculante</strong>. Se comprobará que las medidas son las especificadas
+            en la entrada al almacén.
+          </p>
+          <div className="propModal__pdf">
+            <img src={pdfIcon} alt="PDF" className="propModal__pdf-icon" />
+            <button
+              className="propModal__pdf-download"
+              onClick={() => { void handleDownloadPdf(); setPdfDownloaded(true); }}
+            >
+              Descargar propuesta
+            </button>
+          </div>
+          <div className="propModal__actions">
+            <button
+              className="btn btn--ghost btn--sm"
+              onClick={() => setShowAcceptModal(false)}
+              disabled={actionLoading}
+            >
+              Cancelar
+            </button>
+            <button
+              className="btn btn--sm"
+              onClick={() => { void handleAccept(); setShowAcceptModal(false); }}
+              disabled={actionLoading || !pdfDownloaded}
+              title={!pdfDownloaded ? 'Descarga primero el PDF para continuar' : undefined}
+            >
+              {actionLoading ? 'Guardando...' : 'Confirmar aceptación'}
             </button>
           </div>
         </div>
