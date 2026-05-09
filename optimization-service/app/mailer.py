@@ -15,7 +15,9 @@ log = logging.getLogger("optimization")
 
 def send_rejection_notification(
     proposal_id: str,
+    product_id: str,
     product_name: str,
+    ean_code: str,
     size_name: str,
     manufacturer_name: str,
     rejection_reason: str,
@@ -28,7 +30,7 @@ def send_rejection_notification(
         log.warning("SMTP not configured — skipping rejection notification email")
         return False
 
-    subject = f"[Packaging Optimizer] Propuesta rechazada — {product_name} ({size_name})"
+    subject = f"[Packaging Optimizer] Propuesta rechazada — {product_name} · EAN {ean_code}"
 
     html_body = f"""
     <html>
@@ -40,19 +42,19 @@ def send_rejection_notification(
 
         <table style="border-collapse: collapse; width: 100%; font-size: 13px; margin-bottom: 32px;">
           <tr style="border-bottom: 1px solid #e8e8e8;">
-            <td style="padding: 10px 0; color: #888; width: 180px; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em;">Propuesta</td>
-            <td style="padding: 10px 0; font-family: monospace;">{proposal_id}</td>
+            <td style="padding: 10px 0; color: #888; width: 180px; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em;">Producto</td>
+            <td style="padding: 10px 0; font-weight: 600;">{product_name}</td>
           </tr>
           <tr style="border-bottom: 1px solid #e8e8e8;">
-            <td style="padding: 10px 0; color: #888; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em;">Producto</td>
-            <td style="padding: 10px 0;">{product_name}</td>
+            <td style="padding: 10px 0; color: #888; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em;">EAN</td>
+            <td style="padding: 10px 0; font-family: monospace;">{ean_code or "—"}</td>
           </tr>
           <tr style="border-bottom: 1px solid #e8e8e8;">
             <td style="padding: 10px 0; color: #888; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em;">Talla</td>
             <td style="padding: 10px 0;">{size_name}</td>
           </tr>
           <tr style="border-bottom: 1px solid #e8e8e8;">
-            <td style="padding: 10px 0; color: #888; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em;">Fabricante</td>
+            <td style="padding: 10px 0; color: #888; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em;">Proveedor</td>
             <td style="padding: 10px 0;">{manufacturer_name}</td>
           </tr>
           <tr>
@@ -62,7 +64,7 @@ def send_rejection_notification(
         </table>
 
         <p style="font-size: 13px; color: #555;">
-          Es necesario revisar manualmente esta configuración de embalaje y contactar con el fabricante para determinar una solución alternativa.
+          Es necesario revisar manualmente esta configuración de embalaje y contactar con el proveedor para determinar una solución alternativa.
         </p>
 
         <hr style="border: none; border-top: 1px solid #e8e8e8; margin: 32px 0;" />

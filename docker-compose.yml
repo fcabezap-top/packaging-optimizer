@@ -49,7 +49,7 @@ services:
       - SMTP_USER=${SMTP_USER}
       - SMTP_PASSWORD=${SMTP_PASSWORD}
       - SMTP_FROM=${SMTP_USER}
-      - NOTIFY_EMAIL=${SMTP_USER}
+      - NOTIFY_EMAIL=optimizacionpackaging@gmail.com
     depends_on:
       mongo:
         condition: service_healthy

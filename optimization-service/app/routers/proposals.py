@@ -423,6 +423,7 @@ def update_status(
     proposal_id: str,
     body: ProposalStatusUpdate,
     current_user: TokenData = Depends(require_auth),
+    token: str = Depends(oauth2_scheme),
 ):
     """
     Transitions:
@@ -454,12 +455,33 @@ def update_status(
 
     # Send rejection notification email to technical office
     if body.status.value == "rejected":
-        product_name = doc.get("product_name", doc.get("product_id", "Desconocido"))
-        size_name    = doc.get("size_name", doc.get("size_id", "Desconocida"))
+        product_name = "Desconocido"
+        size_name    = "Desconocida"
+        ean_code     = ""
+        product_id   = doc.get("product_id", "")
+        size_id      = doc.get("size_id", "")
+        try:
+            resp = http_client.get(
+                f"{PRODUCT_SERVICE_URL}/products/{product_id}",
+                headers={"Authorization": f"Bearer {token}"},
+                timeout=5,
+            )
+            if resp.status_code == 200:
+                pdata = resp.json()
+                product_name = pdata.get("name", product_name)
+                ean_code     = pdata.get("ean_code", "")
+                size_name    = next(
+                    (s["name"] for s in pdata.get("sizes", []) if s["id"] == size_id),
+                    size_id,
+                )
+        except Exception:
+            pass
         manufacturer = current_user.username or current_user.id or "Desconocido"
         send_rejection_notification(
             proposal_id=proposal_id,
+            product_id=product_id,
             product_name=product_name,
+            ean_code=ean_code,
             size_name=size_name,
             manufacturer_name=manufacturer,
             rejection_reason=body.rejection_reason or "",
