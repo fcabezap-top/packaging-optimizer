@@ -95,6 +95,26 @@ Las variables principales son:
 
 ---
 
+## Notificaciones por email
+
+Cuando un fabricante rechaza una propuesta, el sistema envía automáticamente un email de notificación a la Oficina Técnica.
+
+- **Cuenta emisora** (SMTP): `packagingoptimizationtfg@gmail.com`
+- **Cuenta receptora** (notificaciones): `optimizacionpackaging@gmail.com`
+
+El email incluye: nombre del producto, EAN, talla, proveedor que ha rechazado y motivo del rechazo.
+
+Las credenciales SMTP se configuran en el archivo `.env` (no incluido en el repositorio por seguridad):
+
+```
+SMTP_USER=packagingoptimizationtfg@gmail.com
+SMTP_PASSWORD=<app-password-de-16-caracteres>
+```
+
+> La App Password se genera en [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords) con verificación en 2 pasos activada.
+
+---
+
 ## Funcionalidades principales
 
 ### Rol Fabricante
