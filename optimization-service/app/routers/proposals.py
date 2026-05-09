@@ -21,6 +21,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from ..config import PRODUCT_SERVICE_URL
 from ..database import proposals_collection, containers_collection, rules_collection, rule_assignments_collection
 from ..engine.inner_calculator import compute_inner_box
+from ..mailer import send_rejection_notification
 from ..engine.master_optimizer import run_master_pipeline
 from ..models.proposal import (
     ProposalCreate,
@@ -450,6 +451,19 @@ def update_status(
         "updated_at": datetime.now(timezone.utc),
     }
     proposals_collection.update_one({"id": proposal_id}, {"$set": patch})
+
+    # Send rejection notification email to technical office
+    if body.status.value == "rejected":
+        product_name = doc.get("product_name", doc.get("product_id", "Desconocido"))
+        size_name    = doc.get("size_name", doc.get("size_id", "Desconocida"))
+        manufacturer = current_user.username or current_user.id or "Desconocido"
+        send_rejection_notification(
+            proposal_id=proposal_id,
+            product_name=product_name,
+            size_name=size_name,
+            manufacturer_name=manufacturer,
+            rejection_reason=body.rejection_reason or "",
+        )
 
     updated = proposals_collection.find_one({"id": proposal_id})
     return _serialize(updated)
