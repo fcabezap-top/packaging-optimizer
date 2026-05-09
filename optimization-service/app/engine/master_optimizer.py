@@ -119,6 +119,7 @@ def _evaluate_container(
     UW_max = max(0.0, container["dims_cm"]["width"]["max"]  - 2 * wall_cm - 2 * margin_w)
 
     max_kg = container["max_weight_kg"]
+    max_air_pct = container.get("max_air_pct", 5.0)
 
     # ── Orientation filtering from rule constraints ────────────────────────
     # The render maps master-W → render-Z (vertical up), master-H → render-Y (depth).
@@ -206,13 +207,22 @@ def _evaluate_container(
                     )
                     air_pct = round(100.0 - fill_pct, 2)
 
-                    # Exterior dims of this specific container instance
-                    ext_L = round(need_L + 2 * wall_cm + 2 * margin_l, 4)
-                    ext_H = round(need_H + 2 * wall_cm + 2 * margin_h, 4)
-                    ext_W = round(need_W + 2 * wall_cm + 2 * margin_w, 4)
+                    # Exterior dims: based on use_* (accounts for container
+                    # minimums that may force a larger box than strictly needed)
+                    # H adds the top-flap overlap back.
+                    ext_L = round(use_L + 2 * wall_cm + 2 * margin_l, 4)
+                    ext_H = round(use_H + 2 * wall_cm + 2 * margin_h + _FLAP_CM, 4)
+                    ext_W = round(use_W + 2 * wall_cm + 2 * margin_w, 4)
 
-                    # Score: fill ↑  >  inners ↑  >  volume ↓
-                    score = (fill_pct, inners_used, -vol_usable)
+                    # Score:
+                    # 1. Valid configurations (air ≤ max_air) beat invalid ones.
+                    # 2. Among valid: maximise inners_used (pack as many as possible).
+                    # 3. Tiebreak: maximise fill_pct (smallest valid container).
+                    # 4. Last tiebreak: prefer smaller usable volume.
+                    # This ensures a config with 36 valid inners beats one with 24
+                    # even if the 24-inner box has a marginally higher fill ratio.
+                    is_valid = air_pct <= max_air_pct
+                    score = (is_valid, inners_used, fill_pct, -vol_usable)
 
                     if best is None or score > best["score"]:
                         best = {
@@ -246,15 +256,22 @@ def _evaluate_container(
     nL, nH, nW          = best["grid"]
 
     resL = max(use_L - nL * Lr, 0.0)   # gap along L
-    resW = max(use_W - nW * Wr, 0.0)   # gap along W
+    resH = max(use_H - nH * Hr, 0.0)   # gap along H (depth — horizontal)
+    # NOTE: the W-vertical residual (use_W - nW*Wr) is intentionally NOT used
+    # for extras.  Adding boxes there would stack them above the primary grid,
+    # violating any max_stack_layers rule and causing them to render outside the
+    # container (the primary grid is centered in W, so the absolute W-offset of
+    # a "top prism" clips beyond use_W after centering is applied).
 
     inners_used_final = best["inners_used"]
     weight_cap_left   = max(0, best["max_by_weight"] - inners_used_final)
     extras: List[dict] = []
 
-    # 1) Frontal prisma: (resL, use_H, use_W) at offset (nL×Lr, 0, 0)
+    # 1) Front prism: (resL, use_H, nW×Wr) — x-offset nL×Lr
+    #    Height capped to nW×Wr (same as primary stack) so it never exceeds the
+    #    primary stack, never violates max_stack, and stays inside the container.
     if weight_cap_left > 0 and resL > _EPS:
-        cand = _best_grid_for_prism(resL, use_H, use_W, inner_ext)
+        cand = _best_grid_for_prism(resL, use_H, nW * Wr, inner_ext)
         if cand:
             pieces = cand["grid"][0] * cand["grid"][1] * cand["grid"][2]
             add    = min(pieces, weight_cap_left)
@@ -269,19 +286,21 @@ def _evaluate_container(
                 inners_used_final += add
                 weight_cap_left   -= add
 
-    # 2) Side prisma: (use_L, use_H, resW) at offset (0, 0, nW×Wr)
-    if weight_cap_left > 0 and resW > _EPS:
-        cand = _best_grid_for_prism(use_L, use_H, resW, inner_ext)
+    # 2) Depth prism: (use_L, resH, nW×Wr) — y-offset nH×Hr
+    #    Fills the H-depth gap beside the primary grid (horizontal, not vertical).
+    #    Same height cap as above.
+    if weight_cap_left > 0 and resH > _EPS:
+        cand = _best_grid_for_prism(use_L, resH, nW * Wr, inner_ext)
         if cand:
             pieces = cand["grid"][0] * cand["grid"][1] * cand["grid"][2]
             add    = min(pieces, weight_cap_left)
             if add > 0:
                 extras.append({
-                    "kind": "side",
+                    "kind": "depth",
                     "grid":       list(cand["grid"]),
                     "inner_rot":  list(cand["inner_rot"]),
                     "inner_axes": list(cand["inner_axes"]),
-                    "offset":     [0.0, 0.0, round(nW * Wr, 4)],
+                    "offset":     [0.0, round(nH * Hr, 4), 0.0],
                 })
                 inners_used_final += add
                 weight_cap_left   -= add

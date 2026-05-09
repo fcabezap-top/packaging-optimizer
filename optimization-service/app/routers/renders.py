@@ -354,9 +354,11 @@ def _build_container_figure(doc: dict) -> go.Figure:
 
     traces = []
 
-    # Outer box — solo contorno, sin relleno
+    # Outer box — mesh semitransparente + borde grueso (igual que en propuestas)
+    traces.append(_box_mesh(0, 0, 0, L_max, W_max, H_max,
+                             f"{name}", opacity=0.10, color="#9aa0a6"))
     traces.append(_box_edges(0, 0, 0, L_max, W_max, H_max,
-                              f"{name} — máx", width=2, color="#1a73e8"))
+                              f"{name} — máx", width=4, color="#DCDEDC"))
 
     # Inner box — min dims — solo contorno + relleno útil (igual que el máx)
     all_fixed = (L_min == L_max and H_min == H_max and W_min == W_max)
@@ -367,27 +369,27 @@ def _build_container_figure(doc: dict) -> go.Figure:
             iL_min = max(L_min - 2 * wall_cm, 0)
             iW_min = max(W_min - 2 * wall_cm, 0)
             iH_min = max(H_min - 2 * wall_cm - 1.0, 0)
-            traces.extend(_box_faces(wall_cm, wall_cm, wall_cm, iL_min, iW_min, iH_min,
-                                      f"{name} — mín interior útil",
-                                      opacity=0.15, color="#34A883"))
+            traces.append(_box_mesh(wall_cm, wall_cm, wall_cm, iL_min, iW_min, iH_min,
+                                    f"{name} — mín interior útil",
+                                    opacity=0.15, color="#34A883"))
         else:
-            traces.extend(_box_faces(0, 0, 0, L_min, W_min, H_min,
-                                      f"{name} — mín", opacity=0.15, color="#34A883"))
+            traces.append(_box_mesh(0, 0, 0, L_min, W_min, H_min,
+                                    f"{name} — mín", opacity=0.15, color="#34A883"))
 
     # Espacio útil — azul con relleno (descontando paredes y solapa 1 cm arriba)
     if wall_cm > 0:
         iL = max(L_max - 2 * wall_cm, 0)
         iW = max(W_max - 2 * wall_cm, 0)
         iH = max(H_max - 2 * wall_cm - 1.0, 0)
-        traces.extend(_box_faces(wall_cm, wall_cm, wall_cm, iL, iW, iH,
-                                  f"Interior útil (pared {doc['wall_thickness_mm']:.0f} mm · solapa 1 cm)",
-                                  opacity=0.25, color="#4da3ff"))
+        traces.append(_box_mesh(wall_cm, wall_cm, wall_cm, iL, iW, iH,
+                                f"Interior útil (pared {doc['wall_thickness_mm']:.0f} mm · solapa 1 cm)",
+                                opacity=0.25, color="#4da3ff"))
         traces.append(_box_edges(wall_cm, wall_cm, wall_cm, iL, iW, iH,
-                                  "Contorno interior útil", width=2, color="#1a73e8"))
+                                  "Contorno interior útil", width=3, color="#1a73e8"))
     else:
         # Sin grosor definido: azul sobre el exterior completo (comportamiento original)
-        traces.extend(_box_faces(0, 0, 0, L_max, W_max, H_max,
-                                  f"{name} — máx", opacity=0.25, color="#4da3ff"))
+        traces.append(_box_mesh(0, 0, 0, L_max, W_max, H_max,
+                                f"{name} — máx", opacity=0.25, color="#4da3ff"))
 
     # Dimension annotations
     traces += _dim_annotations_range(L_min, L_max, H_min, H_max, W_min, W_max)
@@ -707,10 +709,12 @@ def _build_proposal_figure(doc: dict) -> go.Figure:
     # H: (H_ext - H_util) = 2*wall + 1cm_flap; bottom wall = half of that minus the flap
     h_margins = max(0.0, bH - Hu)
     z_wall = max(0.0, h_margins - 1.0) / 2.0
-    # Slack within util after grid, split equally
-    x_off = x_wall + max(0.0, Lu - nL * Lr) / 2.0
-    y_off = y_wall + max(0.0, Wu - nW * Wr) / 2.0
-    z_off = z_wall + max(0.0, Hu - nH * Hr) / 2.0
+    # Inners start flush at the wall — no extra centering slack.
+    # Centering within a fixed-dim container causes the grid to appear shifted
+    # (half-slack gap on the far side, inners poking out on the near side).
+    x_off = x_wall
+    y_off = y_wall
+    z_off = z_wall
 
     # ── Inner boxes (primary grid + extras) — batched into 2 traces ──────────
     inner_rects: list = []

@@ -118,8 +118,8 @@ const ProposalReviewPage: React.FC = () => {
   const statusLabel = activeProposal?.status === 'accepted' ? 'ACEPTADO' : 'RECHAZADO';
 
   return (
-    <AppShell>
-      <div className="containerDetail">
+    <AppShell fullWidth>
+      <div className="containerDetail" style={{ paddingLeft: 'var(--size-8)', paddingRight: 'var(--size-8)' }}>
         {/* ── Header ───────────────────────────────────────────────────── */}
         <div className="containerDetail__header">
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--size-4)' }}>

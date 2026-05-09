@@ -216,6 +216,7 @@ def create_proposal(
         weight_kg=body.article_dims.weight_kg,
         lot_size=body.lot_size,
         wall_thickness_mm=body.inner_wall_thickness_mm,
+        constraints=constraints if constraints else None,
     )
     if inner is None:
         raise HTTPException(
@@ -295,6 +296,7 @@ def calculate_proposal(
         weight_kg=body.article_dims.weight_kg,
         lot_size=body.lot_size,
         wall_thickness_mm=body.inner_wall_thickness_mm,
+        constraints=constraints if constraints else None,
     )
     if inner is None:
         raise HTTPException(
@@ -496,6 +498,7 @@ def recalculate_proposal(
         weight_kg=body.article_dims.weight_kg,
         lot_size=body.lot_size,
         wall_thickness_mm=body.inner_wall_thickness_mm,
+        constraints=constraints if constraints else None,
     )
     if inner is None:
         raise HTTPException(

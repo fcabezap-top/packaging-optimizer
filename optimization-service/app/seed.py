@@ -18,18 +18,18 @@ from .database import client, containers_collection, rules_collection, rule_assi
 SEED_CONTAINERS = [
     {
         "id": "c0000000-0000-0000-0000-000000000001",
-        "name": "Caja-S",
-        "description": "Caja pequena -- alta densidad, menor volumen de aire",
+        "name": "Caja Estándar",
+        "description": "Caja estándar de dimensiones fijas en largo y ancho, alto variable",
         "dims_cm": {
-            "length": {"min": 20.0, "max": 35.0},
-            "height": {"min": 15.0, "max": 30.0},
-            "width":  {"min": 10.0, "max": 25.0},
+            "length": {"min": 52.0, "max": 52.0},
+            "height": {"min": 20.0, "max": 40.0},
+            "width":  {"min": 38.0, "max": 38.0},
         },
         "wall_thickness_mm": 3.0,
         "inner_margin_cm": {"length": 0.5, "height": 0.5, "width": 0.5},
-        "max_weight_kg": 10.0,
+        "max_weight_kg": 20.0,
         "max_air_pct": 5.0,
-        "priority": 3,
+        "priority": 1,
         "active": True,
         "local_rules": [
             {"name": "air_max", "value": 5.0},
@@ -37,16 +37,16 @@ SEED_CONTAINERS = [
     },
     {
         "id": "c0000000-0000-0000-0000-000000000002",
-        "name": "Caja-M",
-        "description": "Caja media -- uso general",
+        "name": "Caja Mediana",
+        "description": "Caja mediana -- uso general (P2: L 55.1–64 cm, H 35.1–45 cm, W 15.1–42.5 cm)",
         "dims_cm": {
-            "length": {"min": 30.0, "max": 50.0},
-            "height": {"min": 32.0, "max": 32.0},
-            "width":  {"min": 20.0, "max": 35.0},
+            "length": {"min": 55.1, "max": 64.0},
+            "height": {"min": 35.1, "max": 45.0},
+            "width":  {"min": 15.1, "max": 42.5},
         },
         "wall_thickness_mm": 3.0,
         "inner_margin_cm": {"length": 0.5, "height": 0.5, "width": 0.5},
-        "max_weight_kg": 20.0,
+        "max_weight_kg": 22.0,
         "max_air_pct": 10.0,
         "priority": 2,
         "active": True,
@@ -56,18 +56,18 @@ SEED_CONTAINERS = [
     },
     {
         "id": "c0000000-0000-0000-0000-000000000003",
-        "name": "Caja-L",
-        "description": "Caja grande -- productos voluminosos o lotes grandes",
+        "name": "Caja Grande",
+        "description": "Caja grande -- lotes grandes (P3: L 55.1–84 cm, H 35.1–64 cm, W 15.1–60 cm)",
         "dims_cm": {
-            "length": {"min": 45.0, "max": 70.0},
-            "height": {"min": 35.0, "max": 55.0},
-            "width":  {"min": 30.0, "max": 50.0},
+            "length": {"min": 55.1, "max": 84.0},
+            "height": {"min": 35.1, "max": 64.0},
+            "width":  {"min": 15.1, "max": 60.0},
         },
         "wall_thickness_mm": 4.0,
         "inner_margin_cm": {"length": 0.8, "height": 0.8, "width": 0.8},
-        "max_weight_kg": 35.0,
+        "max_weight_kg": 22.0,
         "max_air_pct": 5.0,
-        "priority": 1,
+        "priority": 3,
         "active": True,
         "local_rules": [
             {"name": "air_max", "value": 5.0},
@@ -75,16 +75,16 @@ SEED_CONTAINERS = [
     },
     {
         "id": "c0000000-0000-0000-0000-000000000004",
-        "name": "Caja-XL",
-        "description": "Caja extra grande -- dimensiones fijas, sin rango",
+        "name": "Caja Voluminosa",
+        "description": "Caja para productos voluminosos y palés -- dimensiones amplias",
         "dims_cm": {
-            "length": {"min": 80.0, "max": 80.0},
-            "height": {"min": 60.0, "max": 60.0},
-            "width":  {"min": 55.0, "max": 55.0},
+            "length": {"min": 75.0, "max": 400.0},
+            "height": {"min": 75.0, "max": 400.0},
+            "width":  {"min": 75.0, "max": 400.0},
         },
         "wall_thickness_mm": 5.0,
         "inner_margin_cm": {"length": 1.0, "height": 1.0, "width": 1.0},
-        "max_weight_kg": 50.0,
+        "max_weight_kg": 200.0,
         "max_air_pct": 5.0,
         "priority": 4,
         "active": True,
@@ -198,7 +198,9 @@ def run_seed() -> None:
         containers_collection.insert_many(SEED_CONTAINERS)
         print(f"[seed] Inserted {len(SEED_CONTAINERS)} containers.")
     else:
-        print("[seed] Containers already exist -- skipping.")
+        for c in SEED_CONTAINERS:
+            containers_collection.update_one({"id": c["id"]}, {"$set": c}, upsert=True)
+        print("[seed] Containers already exist -- upserted any changes.")
 
     if rules_collection.count_documents({}) == 0:
         rules_collection.insert_many(SEED_RULES)
