@@ -66,6 +66,19 @@ jobs:
         run: |
           pytest -q
 
+      - name: Install dependencies for product-service (tests)
+        working-directory: ./product-service
+        run: |
+          pip install -r requirements.txt
+          pip install pytest httpx
+
+      - name: Run unit tests (product-service)
+        working-directory: ./product-service
+        env:
+          MONGO_URL: mongodb://localhost:27017
+        run: |
+          pytest -q
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
