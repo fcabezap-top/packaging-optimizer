@@ -1,0 +1,114 @@
+﻿.dash__page {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 0;
+}
+
+.dash__toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--size-2);
+  padding: var(--size-2) var(--size-3);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.dash__loading,
+.dash__error,
+.dash__empty {
+  font-size: var(--font-size-s);
+  color: var(--color-content-3);
+  padding: var(--size-2) var(--size-3);
+}
+.dash__error { color: #c00; }
+
+/* Sections */
+.dash__section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px var(--size-3) 0;
+  gap: var(--size-2);
+}
+.dash__section--mt {
+  padding-top: 56px;
+}
+
+.dash__sectionTitle {
+  width: 100%;
+  max-width: 900px;
+  font-size: var(--font-size-m);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-content-1);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--size-1);
+}
+
+/* KPI cards */
+.dash__kpiRow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--size-2);
+  width: 100%;
+  max-width: 900px;
+}
+
+.dash__kpi {
+  border: 1px solid var(--color-border);
+  padding: var(--size-3) var(--size-4);
+  flex: 1 1 160px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.dash__kpiLabel {
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-content-3);
+}
+.dash__kpiValue {
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--color-content-1);
+  line-height: 1.1;
+}
+.dash__kpiSub {
+  font-size: var(--font-size-xs);
+  color: var(--color-content-3);
+}
+
+/* Color variants */
+.dash__kpi--green .dash__kpiValue { color: #1a7d3a; }
+.dash__kpi--red   .dash__kpiValue { color: #c00; }
+
+/* Table */
+.dash__table {
+  width: 100%;
+  max-width: 900px;
+  border-collapse: collapse;
+  font-size: var(--font-size-s);
+}
+.dash__table th,
+.dash__table td {
+  text-align: left;
+  padding: var(--size-1) var(--size-2);
+  border-bottom: 1px solid var(--color-border);
+}
+.dash__table th {
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-content-3);
+  font-weight: 600;
+}
+.dash__table td:first-child { font-weight: 600; color: var(--color-content-1); }
+.dash__cell--green { color: #1a7d3a; font-weight: 700; }
+.dash__cell--red   { color: #c00;    font-weight: 700; }

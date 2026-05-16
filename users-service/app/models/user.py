@@ -28,6 +28,7 @@ class UserCreate(BaseModel):
 
 
 class UserResponse(BaseModel):
+    id: Optional[str] = None
     username: str
     email: str
     first_name: str

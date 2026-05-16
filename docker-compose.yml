@@ -66,6 +66,10 @@ services:
       - VITE_USERS_API=http://localhost:8001
       - VITE_PRODUCT_API=http://localhost:8002
       - VITE_OPTIMIZATION_API=http://localhost:8003
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - ./frontend/index.html:/app/index.html
     depends_on:
       - users
       - product

@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/login/LoginPage';
+import DashboardPage from './pages/dashboard/DashboardPage';
 import ProductPage from './pages/product/ProductPage';
 import ContainersPage from './pages/containers/ContainersPage';
 import RulesPage from './pages/rules/RulesPage';
@@ -40,6 +41,7 @@ const AppRouter: React.FC = () => (
   <BrowserRouter>
     <Routes>
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+      <Route path="/dashboard"    element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
       <Route path="/product"      element={<PrivateRoute><ProductPage /></PrivateRoute>} />
       <Route path="/containers"   element={<PrivateRoute><ContainersPage /></PrivateRoute>} />
       <Route path="/rules"        element={<PrivateRoute><RulesPage /></PrivateRoute>} />

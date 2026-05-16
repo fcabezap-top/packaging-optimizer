@@ -32,7 +32,7 @@ def get_me(current_user: dict = Depends(get_current_user)):
 @router.get("/", response_model=list[UserResponse])
 def get_users(current_user: dict = Depends(get_current_user)):
     return [
-        UserResponse(**{**u, "_id": str(u["_id"])})
+        UserResponse(**{k: v for k, v in u.items() if k != "_id"})
         for u in users_collection.find()
     ]
 

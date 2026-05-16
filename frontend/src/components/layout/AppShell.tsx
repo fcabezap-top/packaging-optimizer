@@ -10,6 +10,7 @@ interface Tab {
 }
 
 const TABS: Tab[] = [
+  { label: 'Dashboard',    path: '/dashboard',    roles: ['reviewer', 'admin'] },
   { label: 'Producto',     path: '/product',      roles: ['reviewer', 'admin'] },
   { label: 'Contenedores', path: '/containers',   roles: ['reviewer', 'admin'] },
   { label: 'Reglas',       path: '/rules',        roles: ['reviewer', 'admin'] },

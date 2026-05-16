@@ -6,8 +6,6 @@ en lugar del modelo de dominio PackagingProposal.
 
 Dependencias: reportlab, matplotlib, Pillow (ya en requirements.txt)
 """
-# NOTE: full rewrite — Spanish labels, product header, articles in inner PNG, 3-column layout
-
 from __future__ import annotations
 
 import base64
