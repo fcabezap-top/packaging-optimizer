@@ -53,6 +53,19 @@ jobs:
         run: |
           pytest -q
 
+      - name: Install dependencies for optimization-service (tests)
+        working-directory: ./optimization-service
+        run: |
+          pip install -r requirements.txt
+          pip install pytest httpx
+
+      - name: Run unit tests (optimization-service)
+        working-directory: ./optimization-service
+        env:
+          MONGO_URL: mongodb://localhost:27017
+        run: |
+          pytest -q
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
