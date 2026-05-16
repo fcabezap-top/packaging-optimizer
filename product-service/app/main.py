@@ -32,6 +32,11 @@ app.include_router(products.router)
 
 
 @app.get("/")
+def root():
+    return {"service": "product", "status": "ok"}
+
+
+@app.get("/health")
 def health():
     return {"service": "product", "status": "ok"}
 

@@ -33,5 +33,10 @@ app.include_router(proposals.router)
 
 
 @app.get("/")
+def root():
+    return {"service": "optimization", "status": "ok"}
+
+
+@app.get("/health")
 def health():
     return {"service": "optimization", "status": "ok"}
