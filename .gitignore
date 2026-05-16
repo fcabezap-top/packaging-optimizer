@@ -2,6 +2,10 @@
 repos-contexto/
 COPILOT_CONTEXT.md
 
+# Ficheros temporales y backups
+*.bak
+*_new.py
+
 # Python
 __pycache__/
 *.py[cod]

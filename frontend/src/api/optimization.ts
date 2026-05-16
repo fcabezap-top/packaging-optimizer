@@ -331,3 +331,10 @@ export async function updateProposalStatus(
   }
   return res.json();
 }
+
+/** Fetch all proposals (all products) — reviewer/admin only. */
+export async function listAllProposals(token: string): Promise<ProposalResult[]> {
+  const res = await safeFetch(`${BASE}/proposals/`, { headers: authHeader(token) });
+  if (!res.ok) throw new Error('Error fetching proposals');
+  return res.json();
+}

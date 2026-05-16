@@ -1,5 +1,5 @@
 """
-Download AI-generated product images for all 20 seed products.
+Download product images for all 20 seed products.
 
 Usage (from repo root):
     python scripts/download_product_images.py
@@ -10,9 +10,8 @@ Images are saved to:
 Requirements:
     pip install requests
 
-If Pollinations.ai fails or gives a bad result for a specific product,
-replace the file manually with any 400x400 JPEG (e.g. from Leonardo.ai,
-Unsplash, or your own photo).
+If the download fails or gives a bad result for a specific product,
+replace the file manually with any 400x400 JPEG.
 """
 
 import os

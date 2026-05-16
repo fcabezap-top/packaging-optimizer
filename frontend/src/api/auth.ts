@@ -43,6 +43,24 @@ export async function apiResetPassword(token: string, new_password: string): Pro
   }
 }
 
+const USERS_BASE = import.meta.env.VITE_USERS_API ?? 'http://localhost:8001';
+
+export interface UserInfo {
+  id: string | null;
+  username: string;
+  first_name: string;
+  last_name: string;
+  role: string;
+}
+
+export async function listUsers(token: string): Promise<UserInfo[]> {
+  const res = await fetch(`${USERS_BASE}/users/`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error('Error fetching users');
+  return res.json();
+}
+
 // Decode JWT payload (no verification — only for reading role/username client-side)
 export function decodeJwtPayload(token: string): Record<string, unknown> {
   try {
