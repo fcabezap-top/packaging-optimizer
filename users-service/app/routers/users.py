@@ -5,6 +5,8 @@ from ..database import users_collection
 from ..models.user import UserResponse
 from ..security import decode_access_token
 
+_REVIEWER_ROLES = {"reviewer", "admin"}
+
 router = APIRouter(prefix="/users", tags=["Users"])
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
@@ -31,6 +33,8 @@ def get_me(current_user: dict = Depends(get_current_user)):
 
 @router.get("/", response_model=list[UserResponse])
 def get_users(current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") not in _REVIEWER_ROLES:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Reviewer or admin role required")
     return [
         UserResponse(**{k: v for k, v in u.items() if k != "_id"})
         for u in users_collection.find()
